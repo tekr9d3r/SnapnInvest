@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Camera, Scan, ShoppingCart, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { StockLogo } from "@/components/StockLogo";
+
 import robinhoodLogo from "@/assets/robinhood-logo.png";
 import arbitrumLogo from "@/assets/arbitrum-logo.png";
 
@@ -112,25 +112,16 @@ const Index = () => {
         </div>
       </motion.div>
 
-      {/* Supported stocks */}
+      {/* Works with any stock */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6, delay: 0.8 }}
-        className="mt-12 flex items-center gap-3"
+        className="mt-12 rounded-full bg-secondary px-5 py-2"
       >
-        {["TSLA", "AMZN", "PLTR", "NFLX", "AMD"].map((ticker, i) => (
-          <motion.div
-            key={ticker}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.9 + i * 0.1 }}
-            className="flex flex-col items-center gap-1"
-          >
-            <StockLogo ticker={ticker} size="sm" />
-            <span className="text-[10px] font-semibold text-muted-foreground">{ticker}</span>
-          </motion.div>
-        ))}
+        <span className="text-xs font-semibold text-muted-foreground">
+          Works with any publicly traded stock 📈
+        </span>
       </motion.div>
 
       {/* Footer branding */}

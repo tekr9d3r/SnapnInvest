@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Scan, X, Camera } from "lucide-react";
 import { StockLogo } from "@/components/StockLogo";
 import { Button } from "@/components/ui/button";
-import { SUPPORTED_STOCKS, Stock } from "@/lib/types";
+import { Stock } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -24,6 +24,7 @@ const ResultPage = () => {
 
     const identifyBrand = async () => {
       try {
+        // Step 1: AI identifies the brand
         const { data, error } = await supabase.functions.invoke("identify-brand", {
           body: { image },
         });
@@ -44,12 +45,35 @@ const ResultPage = () => {
           return;
         }
 
-        if (data?.ticker) {
-          const stock = SUPPORTED_STOCKS.find((s) => s.ticker === data.ticker);
-          setMatchedStock(stock || null);
-        } else {
+        if (!data?.ticker) {
           setMatchedStock(null);
+          setScanning(false);
+          return;
         }
+
+        // Step 2: Look up real stock data
+        const { data: stockData, error: stockError } = await supabase.functions.invoke("stock-lookup", {
+          body: { ticker: data.ticker },
+        });
+
+        if (stockError || stockData?.error) {
+          console.error("Stock lookup error:", stockError || stockData?.error);
+          toast.error("Could not find stock data. Please try again.");
+          setMatchedStock(null);
+          setScanning(false);
+          return;
+        }
+
+        const stock: Stock = {
+          ticker: stockData.ticker,
+          name: data.name || stockData.name,
+          logo: "",
+          contractAddress: `0x...${stockData.ticker}`,
+          currentPrice: stockData.currentPrice,
+          logoUrl: stockData.logoUrl,
+        };
+
+        setMatchedStock(stock);
       } catch (err) {
         console.error("Identify error:", err);
         toast.error("Something went wrong. Please try again.");
@@ -125,7 +149,7 @@ const ResultPage = () => {
               className="flex flex-col items-center"
             >
               <div className="flex items-center gap-3">
-                <StockLogo ticker={matchedStock.ticker} size="lg" />
+                <StockLogo ticker={matchedStock.ticker} logoUrl={matchedStock.logoUrl} size="lg" />
                 <div>
                   <h2 className="font-display text-2xl font-bold text-foreground">
                     {matchedStock.name}
@@ -167,7 +191,7 @@ const ResultPage = () => {
                 No match found
               </h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                We couldn't match this to a supported stock. Try pointing at a Tesla, Amazon, Palantir, Netflix, or AMD product.
+                We couldn't match this to a publicly traded stock. Try pointing at a product from a public company.
               </p>
               <Button
                 onClick={() => navigate("/camera")}

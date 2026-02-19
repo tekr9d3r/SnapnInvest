@@ -6,8 +6,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SUPPORTED_TICKERS = ["TSLA", "AMZN", "PLTR", "NFLX", "AMD"];
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -27,7 +25,6 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Extract base64 data and mime type from data URL
     const match = image.match(/^data:(image\/\w+);base64,(.+)$/);
     if (!match) {
       return new Response(JSON.stringify({ error: "Invalid image format" }), {
@@ -51,20 +48,19 @@ serve(async (req) => {
           messages: [
             {
               role: "system",
-              content: `You are a brand identification AI. Analyze the image and determine if it contains any product, logo, or branding related to these companies: Tesla (TSLA), Amazon (AMZN), Palantir (PLTR), Netflix (NFLX), or AMD (AMD).
+              content: `You are a brand identification AI. Analyze the image and determine if it contains any product, logo, or branding related to a publicly traded company on US stock exchanges (NYSE, NASDAQ).
 
 Respond ONLY with a JSON object in this exact format:
-- If a brand is found: {"ticker": "TSLA", "confidence": 0.95}
-- If no supported brand is found: {"ticker": null, "confidence": 0}
+- If a publicly traded company is found: {"ticker": "AAPL", "name": "Apple", "confidence": 0.95}
+- If no publicly traded company is found: {"ticker": null, "name": null, "confidence": 0}
 
 Rules:
-- Only return tickers from this list: TSLA, AMZN, PLTR, NFLX, AMD
-- Tesla includes: Tesla cars, Powerwall, Supercharger, any Tesla logo
-- Amazon includes: Amazon boxes, Prime, Alexa, Echo, Kindle, AWS, Whole Foods, Ring
-- Palantir includes: Palantir logo, Gotham, Foundry
-- Netflix includes: Netflix logo, Netflix on screens
-- AMD includes: AMD logo, Radeon, Ryzen, EPYC chips
-- confidence should be between 0 and 1`,
+- Return the official US stock ticker symbol for ANY publicly traded company you recognize
+- Include the company name
+- This includes but is not limited to: tech companies, car brands, food brands, retail stores, airlines, banks, pharmaceuticals, etc.
+- Look for logos, products, packaging, storefronts, vehicles, devices, clothing brands, etc.
+- confidence should be between 0 and 1
+- Only return companies actually traded on US exchanges`,
             },
             {
               role: "user",
@@ -88,15 +84,19 @@ Rules:
               function: {
                 name: "identify_brand",
                 description:
-                  "Return the identified brand ticker and confidence score",
+                  "Return the identified brand ticker, company name, and confidence score",
                 parameters: {
                   type: "object",
                   properties: {
                     ticker: {
                       type: "string",
-                      enum: ["TSLA", "AMZN", "PLTR", "NFLX", "AMD"],
                       description:
-                        "The stock ticker of the identified brand, or null if no match",
+                        "The US stock ticker of the identified brand, or null if no match",
+                      nullable: true,
+                    },
+                    name: {
+                      type: "string",
+                      description: "The company name, or null if no match",
                       nullable: true,
                     },
                     confidence: {
@@ -104,7 +104,7 @@ Rules:
                       description: "Confidence score between 0 and 1",
                     },
                   },
-                  required: ["ticker", "confidence"],
+                  required: ["ticker", "name", "confidence"],
                   additionalProperties: false,
                 },
               },
@@ -139,23 +139,16 @@ Rules:
     const data = await response.json();
     console.log("AI response:", JSON.stringify(data));
 
-    // Extract tool call result
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     if (toolCall?.function?.arguments) {
       const result = JSON.parse(toolCall.function.arguments);
-      // Validate ticker
-      if (result.ticker && !SUPPORTED_TICKERS.includes(result.ticker)) {
-        result.ticker = null;
-        result.confidence = 0;
-      }
       return new Response(JSON.stringify(result), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Fallback: no match
     return new Response(
-      JSON.stringify({ ticker: null, confidence: 0 }),
+      JSON.stringify({ ticker: null, name: null, confidence: 0 }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {

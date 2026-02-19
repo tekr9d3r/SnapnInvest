@@ -81,7 +81,7 @@ const PortfolioPage = () => {
                 className="flex items-center justify-between rounded-2xl border border-border bg-card p-4"
               >
                 <div className="flex items-center gap-3">
-                  <StockLogo ticker={s.ticker} size="sm" />
+                  <StockLogo ticker={s.ticker} logoUrl={s.logoUrl} size="sm" />
                   <div>
                     <p className="font-semibold text-foreground">{s.ticker}</p>
                     <p className="text-xs text-muted-foreground">

@@ -2,3 +2,6 @@ project_id = "zuwtjkrejuvkwepsdqvv"
 
 [functions.identify-brand]
 verify_jwt = false
+
+[functions.stock-lookup]
+verify_jwt = false
