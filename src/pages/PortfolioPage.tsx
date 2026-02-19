@@ -78,29 +78,48 @@ const PortfolioPage = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className="flex items-center justify-between rounded-2xl border border-border bg-card p-4"
+                className="overflow-hidden rounded-2xl border border-border bg-card"
               >
-                <div className="flex items-center gap-3">
-                  <StockLogo ticker={s.ticker} logoUrl={s.logoUrl} size="sm" />
-                  <div>
-                    <p className="font-semibold text-foreground">{s.ticker}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {s.shares.toFixed(4)} shares
+                {/* Captured photo */}
+                {s.latestImage && (
+                  <div className="relative h-36 w-full overflow-hidden">
+                    <img
+                      src={s.latestImage}
+                      alt={`Photo taken to buy ${s.ticker}`}
+                      className="h-full w-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-card/80" />
+                    <div className="absolute bottom-2 left-3 flex items-center gap-1.5">
+                      <Camera className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-[10px] text-muted-foreground">Snapped to buy</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Stock info */}
+                <div className="flex items-center justify-between p-4">
+                  <div className="flex items-center gap-3">
+                    <StockLogo ticker={s.ticker} logoUrl={s.logoUrl} size="sm" />
+                    <div>
+                      <p className="font-semibold text-foreground">{s.ticker}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {s.shares.toFixed(4)} shares · ${s.invested.toFixed(2)} invested
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-foreground">
+                      ${s.currentValue.toFixed(2)}
+                    </p>
+                    <p
+                      className={`text-xs font-medium ${
+                        s.gainLoss >= 0 ? "text-success" : "text-danger"
+                      }`}
+                    >
+                      {s.gainLoss >= 0 ? "+" : ""}
+                      {s.gainLossPercent.toFixed(1)}%
                     </p>
                   </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-semibold text-foreground">
-                    ${s.currentValue.toFixed(2)}
-                  </p>
-                  <p
-                    className={`text-xs font-medium ${
-                      s.gainLoss >= 0 ? "text-success" : "text-danger"
-                    }`}
-                  >
-                    {s.gainLoss >= 0 ? "+" : ""}
-                    {s.gainLossPercent.toFixed(1)}%
-                  </p>
                 </div>
               </motion.div>
             ))}
