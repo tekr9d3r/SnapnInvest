@@ -1,16 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import { Camera, Scan, ShoppingCart, ArrowRight } from "lucide-react";
+import { Camera, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 
 import robinhoodLogo from "@/assets/robinhood-logo.png";
 import arbitrumLogo from "@/assets/arbitrum-logo.png";
 
-const steps = [
-  { icon: Camera, label: "Snap", desc: "Take a photo of any product" },
-  { icon: Scan, label: "Recognize", desc: "AI identifies the brand" },
-  { icon: ShoppingCart, label: "Buy", desc: "Purchase tokenized stock" },
-];
+
 
 
 const Index = () => {
@@ -89,28 +85,6 @@ const Index = () => {
       </motion.div>
 
 
-      {/* How it works */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.6 }}
-        className="mt-12 w-full max-w-sm"
-      >
-        <h3 className="mb-6 text-center text-sm font-semibold uppercase tracking-widest text-muted-foreground">
-          How it works
-        </h3>
-        <div className="flex items-start justify-between gap-2">
-          {steps.map((step) => (
-            <div key={step.label} className="flex flex-1 flex-col items-center text-center">
-              <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary">
-                <step.icon className="h-6 w-6 text-primary" />
-              </div>
-              <span className="text-sm font-semibold text-foreground">{step.label}</span>
-              <span className="mt-1 text-xs text-muted-foreground">{step.desc}</span>
-            </div>
-          ))}
-        </div>
-      </motion.div>
 
       {/* Works with any stock */}
       <motion.div
