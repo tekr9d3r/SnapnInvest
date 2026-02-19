@@ -12,13 +12,12 @@ export function getPortfolio(): PortfolioState {
   }
 }
 
-export function addHolding(holding: Omit<Holding, "id" | "date">, capturedImage?: string): Holding {
+export function addHolding(holding: Omit<Holding, "id" | "date">): Holding {
   const portfolio = getPortfolio();
   const newHolding: Holding = {
     ...holding,
     id: crypto.randomUUID(),
     date: new Date().toISOString(),
-    ...(capturedImage ? { capturedImage } : {}),
   };
   portfolio.holdings.unshift(newHolding);
   portfolio.totalInvested += holding.amountInvested;
@@ -28,35 +27,18 @@ export function addHolding(holding: Omit<Holding, "id" | "date">, capturedImage?
 
 export function getPortfolioSummary() {
   const portfolio = getPortfolio();
-  const grouped = new Map<string, {
-    shares: number;
-    invested: number;
-    name: string;
-    logoUrl?: string;
-    priceAtPurchase: number;
-    latestImage?: string;
-  }>();
+  const grouped = new Map<string, { shares: number; invested: number; name: string; logoUrl?: string; priceAtPurchase: number }>();
 
   for (const h of portfolio.holdings) {
-    const existing = grouped.get(h.ticker) || {
-      shares: 0,
-      invested: 0,
-      name: h.name,
-      logoUrl: h.logoUrl,
-      priceAtPurchase: h.priceAtPurchase,
-      latestImage: h.capturedImage,
-    };
+    const existing = grouped.get(h.ticker) || { shares: 0, invested: 0, name: h.name, logoUrl: h.logoUrl, priceAtPurchase: h.priceAtPurchase };
     existing.shares += h.shares;
     existing.invested += h.amountInvested;
-    // Keep the most recent purchase image (holdings are newest-first)
-    if (!existing.latestImage && h.capturedImage) {
-      existing.latestImage = h.capturedImage;
-    }
     grouped.set(h.ticker, existing);
   }
 
   let totalValue = 0;
   const summaries = Array.from(grouped.entries()).map(([ticker, data]) => {
+    // Use purchase price as estimate since we don't have live prices stored locally
     const currentValue = data.shares * data.priceAtPurchase;
     totalValue += currentValue;
     return {
@@ -68,7 +50,6 @@ export function getPortfolioSummary() {
       currentValue,
       gainLoss: currentValue - data.invested,
       gainLossPercent: ((currentValue - data.invested) / data.invested) * 100,
-      latestImage: data.latestImage,
     };
   });
 

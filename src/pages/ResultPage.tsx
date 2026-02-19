@@ -6,6 +6,7 @@ import { StockLogo } from "@/components/StockLogo";
 import { Button } from "@/components/ui/button";
 import { Stock } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const ResultPage = () => {
   const navigate = useNavigate();
@@ -14,7 +15,6 @@ const ResultPage = () => {
 
   const [scanning, setScanning] = useState(true);
   const [matchedStock, setMatchedStock] = useState<Stock | null>(null);
-  const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!image) {
@@ -31,14 +31,16 @@ const ResultPage = () => {
 
         if (error) {
           console.error("Edge function error:", error);
-          setAnalysisError("Failed to analyze image. Please try again.");
+          toast.error("Failed to analyze image. Please try again.");
+          setMatchedStock(null);
           setScanning(false);
           return;
         }
 
         if (data?.error) {
           console.error("AI error:", data.error);
-          setAnalysisError(data.error);
+          toast.error(data.error);
+          setMatchedStock(null);
           setScanning(false);
           return;
         }
@@ -56,7 +58,8 @@ const ResultPage = () => {
 
         if (stockError || stockData?.error) {
           console.error("Stock lookup error:", stockError || stockData?.error);
-          setAnalysisError("Could not find stock data. Please try again.");
+          toast.error("Could not find stock data. Please try again.");
+          setMatchedStock(null);
           setScanning(false);
           return;
         }
@@ -73,7 +76,8 @@ const ResultPage = () => {
         setMatchedStock(stock);
       } catch (err) {
         console.error("Identify error:", err);
-        setAnalysisError("Something went wrong. Please try again.");
+        toast.error("Something went wrong. Please try again.");
+        setMatchedStock(null);
       } finally {
         setScanning(false);
       }
@@ -136,28 +140,6 @@ const ResultPage = () => {
             >
               <p className="text-lg font-semibold text-foreground">Analyzing image...</p>
               <p className="mt-1 text-sm text-muted-foreground">AI is identifying the brand</p>
-            </motion.div>
-          ) : analysisError ? (
-            <motion.div
-              key="error"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex flex-col items-center text-center"
-            >
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10">
-                <span className="text-3xl">⚠️</span>
-              </div>
-              <h2 className="font-display text-xl font-bold text-foreground">
-                Analysis failed
-              </h2>
-              <p className="mt-2 text-sm text-muted-foreground">{analysisError}</p>
-              <Button
-                onClick={() => navigate("/camera")}
-                className="mt-6 gap-2 rounded-xl"
-              >
-                <Camera className="h-4 w-4" />
-                Try Again
-              </Button>
             </motion.div>
           ) : matchedStock ? (
             <motion.div

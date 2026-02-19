@@ -7,7 +7,6 @@ import { StockLogo } from "@/components/StockLogo";
 import { Stock } from "@/lib/types";
 import { generateTxHash } from "@/lib/wallet";
 import { addHolding } from "@/lib/portfolio";
-import { compressImage } from "@/lib/imageUtils";
 import arbitrumLogo from "@/assets/arbitrum-logo.png";
 import robinhoodLogo from "@/assets/robinhood-logo.png";
 
@@ -22,7 +21,7 @@ const PHASE_MESSAGES: Record<string, { title: string; sub: string }> = {
 const ConfirmPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { stock, amount, image } = (location.state as { stock: Stock; amount: number; image: string }) || {};
+  const { stock, amount } = (location.state as { stock: Stock; amount: number; image: string }) || {};
 
   const [phase, setPhase] = useState<Phase>("confirm");
   const [txHash, setTxHash] = useState("");
@@ -43,29 +42,15 @@ const ConfirmPage = () => {
     await new Promise((r) => setTimeout(r, 2400));
     const hash = generateTxHash();
     setTxHash(hash);
-
-    // Compress the captured image before saving
-    let compressedImage: string | undefined;
-    if (image) {
-      try {
-        compressedImage = await compressImage(image, 800, 0.6);
-      } catch {
-        compressedImage = undefined;
-      }
-    }
-
-    addHolding(
-      {
-        ticker: stock.ticker,
-        name: stock.name,
-        logo: stock.logo,
-        logoUrl: stock.logoUrl,
-        amountInvested: amount,
-        shares,
-        priceAtPurchase: stock.currentPrice,
-      },
-      compressedImage
-    );
+    addHolding({
+      ticker: stock.ticker,
+      name: stock.name,
+      logo: stock.logo,
+      logoUrl: stock.logoUrl,
+      amountInvested: amount,
+      shares,
+      priceAtPurchase: stock.currentPrice,
+    });
     setPhase("success");
   };
 
