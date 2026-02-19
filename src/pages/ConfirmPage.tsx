@@ -108,8 +108,8 @@ const ConfirmPage = () => {
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Network</span>
                     <span className="flex items-center gap-1 text-foreground">
-                      <img src={arbitrumLogo} alt="" className="h-3.5 w-3.5 rounded-sm" />
-                      Arbitrum
+                      <img src={robinhoodLogo} alt="" className="h-3.5 w-3.5 rounded-sm" />
+                      Robinhood Chain
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
