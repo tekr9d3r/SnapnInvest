@@ -97,23 +97,20 @@ const Index = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6, delay: 0.8 }}
-        className="mt-12 flex items-center gap-4 text-2xl"
+        className="mt-12 flex items-center gap-3"
       >
-        {["⚡", "📦", "🔮", "🎬", "💻"].map((emoji, i) => (
+        {["TSLA", "AMZN", "PLTR", "NFLX", "AMD"].map((ticker, i) => (
           <motion.span
-            key={i}
+            key={ticker}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.9 + i * 0.1 }}
-            className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary"
+            className="rounded-lg bg-secondary px-3 py-1.5 text-xs font-semibold text-muted-foreground"
           >
-            {emoji}
+            {ticker}
           </motion.span>
         ))}
       </motion.div>
-      <p className="mt-3 text-xs text-muted-foreground">
-        TSLA · AMZN · PLTR · NFLX · AMD
-      </p>
     </div>
   );
 };
