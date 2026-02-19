@@ -35,11 +35,11 @@ const ConfirmPage = () => {
 
   const handleConfirm = async () => {
     setPhase("connecting");
-    await new Promise((r) => setTimeout(r, 1200));
+    await new Promise((r) => setTimeout(r, 2200));
     setPhase("minting");
-    await new Promise((r) => setTimeout(r, 1800));
+    await new Promise((r) => setTimeout(r, 2800));
     setPhase("confirming");
-    await new Promise((r) => setTimeout(r, 1400));
+    await new Promise((r) => setTimeout(r, 2400));
     const hash = generateTxHash();
     setTxHash(hash);
     addHolding({
