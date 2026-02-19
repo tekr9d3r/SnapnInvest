@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { StockLogo } from "@/components/StockLogo";
 import robinhoodLogo from "@/assets/robinhood-logo.png";
-import arbitrumLogo from "@/assets/arbitrum-logo.png";
+import arbitrumLogo from "@/assets/arbitrum-logo.svg";
 
 const steps = [
   { icon: Camera, label: "Snap", desc: "Take a photo of any product" },
