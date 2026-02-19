@@ -3,7 +3,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Scan, X, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SUPPORTED_STOCKS, BRAND_KEYWORDS, Stock } from "@/lib/types";
+import { SUPPORTED_STOCKS, Stock } from "@/lib/types";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const ResultPage = () => {
   const navigate = useNavigate();
@@ -18,18 +20,45 @@ const ResultPage = () => {
       navigate("/camera");
       return;
     }
-    // Simulate AI recognition (mock — picks a random stock with ~70% chance, no match ~30%)
-    const timer = setTimeout(() => {
-      const rand = Math.random();
-      if (rand < 0.7) {
-        const stock = SUPPORTED_STOCKS[Math.floor(Math.random() * SUPPORTED_STOCKS.length)];
-        setMatchedStock(stock);
-      } else {
+
+    const identifyBrand = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("identify-brand", {
+          body: { image },
+        });
+
+        if (error) {
+          console.error("Edge function error:", error);
+          toast.error("Failed to analyze image. Please try again.");
+          setMatchedStock(null);
+          setScanning(false);
+          return;
+        }
+
+        if (data?.error) {
+          console.error("AI error:", data.error);
+          toast.error(data.error);
+          setMatchedStock(null);
+          setScanning(false);
+          return;
+        }
+
+        if (data?.ticker) {
+          const stock = SUPPORTED_STOCKS.find((s) => s.ticker === data.ticker);
+          setMatchedStock(stock || null);
+        } else {
+          setMatchedStock(null);
+        }
+      } catch (err) {
+        console.error("Identify error:", err);
+        toast.error("Something went wrong. Please try again.");
         setMatchedStock(null);
+      } finally {
+        setScanning(false);
       }
-      setScanning(false);
-    }, 2000);
-    return () => clearTimeout(timer);
+    };
+
+    identifyBrand();
   }, [image, navigate]);
 
   const handleBuy = (amount: number) => {
