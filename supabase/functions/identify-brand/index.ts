@@ -44,13 +44,13 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
+          model: "google/gemini-2.5-flash",
           messages: [
             {
               role: "system",
               content: `You are a brand identification AI. Analyze the image and determine if it contains any product, logo, or branding related to a publicly traded company on US stock exchanges (NYSE, NASDAQ).
 
-Respond ONLY with a JSON object in this exact format:
+Respond ONLY with a valid JSON object and nothing else — no markdown, no explanation:
 - If a publicly traded company is found: {"ticker": "AAPL", "name": "Apple", "confidence": 0.95}
 - If no publicly traded company is found: {"ticker": null, "name": null, "confidence": 0}
 
@@ -60,14 +60,15 @@ Rules:
 - This includes but is not limited to: tech companies, car brands, food brands, retail stores, airlines, banks, pharmaceuticals, etc.
 - Look for logos, products, packaging, storefronts, vehicles, devices, clothing brands, etc.
 - confidence should be between 0 and 1
-- Only return companies actually traded on US exchanges`,
+- Only return companies actually traded on US exchanges
+- Output ONLY the JSON object, no other text`,
             },
             {
               role: "user",
               content: [
                 {
                   type: "text",
-                  text: "What brand or company is shown in this image? Identify the stock ticker.",
+                  text: "What brand or company is shown in this image? Identify the stock ticker. Return only valid JSON.",
                 },
                 {
                   type: "image_url",
@@ -78,42 +79,6 @@ Rules:
               ],
             },
           ],
-          tools: [
-            {
-              type: "function",
-              function: {
-                name: "identify_brand",
-                description:
-                  "Return the identified brand ticker, company name, and confidence score",
-                parameters: {
-                  type: "object",
-                  properties: {
-                    ticker: {
-                      type: "string",
-                      description:
-                        "The US stock ticker of the identified brand, or null if no match",
-                      nullable: true,
-                    },
-                    name: {
-                      type: "string",
-                      description: "The company name, or null if no match",
-                      nullable: true,
-                    },
-                    confidence: {
-                      type: "number",
-                      description: "Confidence score between 0 and 1",
-                    },
-                  },
-                  required: ["ticker", "name", "confidence"],
-                  additionalProperties: false,
-                },
-              },
-            },
-          ],
-          tool_choice: {
-            type: "function",
-            function: { name: "identify_brand" },
-          },
         }),
       }
     );
@@ -139,18 +104,28 @@ Rules:
     const data = await response.json();
     console.log("AI response:", JSON.stringify(data));
 
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    if (toolCall?.function?.arguments) {
-      const result = JSON.parse(toolCall.function.arguments);
-      return new Response(JSON.stringify(result), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) {
+      return new Response(
+        JSON.stringify({ ticker: null, name: null, confidence: 0 }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    return new Response(
-      JSON.stringify({ ticker: null, name: null, confidence: 0 }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    // Extract JSON from the response (handle potential markdown code blocks)
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error("No JSON found in response:", content);
+      return new Response(
+        JSON.stringify({ ticker: null, name: null, confidence: 0 }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const result = JSON.parse(jsonMatch[0]);
+    return new Response(JSON.stringify(result), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (e) {
     console.error("identify-brand error:", e);
     return new Response(
