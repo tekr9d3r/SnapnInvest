@@ -1,13 +1,21 @@
 import { useNavigate } from "react-router-dom";
-import { Camera, Scan, ShoppingCart, ArrowRight } from "lucide-react";
+import { Camera, Scan, ShoppingCart, ArrowRight, Clock, Shield, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { StockLogo } from "@/components/StockLogo";
+import robinhoodLogo from "@/assets/robinhood-logo.png";
+import arbitrumLogo from "@/assets/arbitrum-logo.png";
 
 const steps = [
   { icon: Camera, label: "Snap", desc: "Take a photo of any product" },
   { icon: Scan, label: "Recognize", desc: "AI identifies the brand" },
   { icon: ShoppingCart, label: "Buy", desc: "Purchase tokenized stock" },
+];
+
+const features = [
+  { icon: Clock, label: "24/7 Trading", desc: "Trade anytime, no market hours" },
+  { icon: Shield, label: "Secure", desc: "On-chain settlement via Arbitrum" },
+  { icon: Zap, label: "Instant", desc: "Near-zero gas fees" },
 ];
 
 const Index = () => {
@@ -32,12 +40,30 @@ const Index = () => {
         </div>
       </motion.div>
 
+      {/* Powered by badges */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+        className="mt-3 flex items-center gap-3"
+      >
+        <div className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1">
+          <img src={robinhoodLogo} alt="Robinhood" className="h-4 w-4 rounded-sm object-contain" />
+          <span className="text-[10px] font-semibold text-muted-foreground">Robinhood</span>
+        </div>
+        <span className="text-[10px] text-muted-foreground">×</span>
+        <div className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1">
+          <img src={arbitrumLogo} alt="Arbitrum" className="h-4 w-4 rounded-sm object-contain" />
+          <span className="text-[10px] font-semibold text-muted-foreground">Arbitrum</span>
+        </div>
+      </motion.div>
+
       {/* Hero */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.2 }}
-        className="mt-12 text-center"
+        className="mt-10 text-center"
       >
         <h2 className="font-display text-4xl font-bold leading-tight tracking-tight text-foreground sm:text-5xl">
           Snap a photo.
@@ -67,27 +93,44 @@ const Index = () => {
         </Button>
       </motion.div>
 
+      {/* Features: 24/7, Secure, Instant */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.5 }}
+        className="mt-12 w-full max-w-sm"
+      >
+        <div className="flex items-start justify-between gap-2">
+          {features.map((f) => (
+            <div key={f.label} className="flex flex-1 flex-col items-center text-center">
+              <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-secondary">
+                <f.icon className="h-5 w-5 text-primary" />
+              </div>
+              <span className="text-xs font-semibold text-foreground">{f.label}</span>
+              <span className="mt-0.5 text-[10px] text-muted-foreground">{f.desc}</span>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+
       {/* How it works */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.6 }}
-        className="mt-16 w-full max-w-sm"
+        className="mt-12 w-full max-w-sm"
       >
         <h3 className="mb-6 text-center text-sm font-semibold uppercase tracking-widest text-muted-foreground">
           How it works
         </h3>
         <div className="flex items-start justify-between gap-2">
-          {steps.map((step, i) => (
+          {steps.map((step) => (
             <div key={step.label} className="flex flex-1 flex-col items-center text-center">
               <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary">
                 <step.icon className="h-6 w-6 text-primary" />
               </div>
               <span className="text-sm font-semibold text-foreground">{step.label}</span>
               <span className="mt-1 text-xs text-muted-foreground">{step.desc}</span>
-              {i < steps.length - 1 && (
-                <div className="absolute" />
-              )}
             </div>
           ))}
         </div>
@@ -112,6 +155,21 @@ const Index = () => {
             <span className="text-[10px] font-semibold text-muted-foreground">{ticker}</span>
           </motion.div>
         ))}
+      </motion.div>
+
+      {/* Footer branding */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.2 }}
+        className="mt-10 flex items-center gap-2 text-[10px] text-muted-foreground"
+      >
+        <span>Powered by</span>
+        <img src={robinhoodLogo} alt="Robinhood" className="h-3.5 w-3.5 rounded-sm object-contain" />
+        <span className="font-semibold">Robinhood Chain</span>
+        <span>+</span>
+        <img src={arbitrumLogo} alt="Arbitrum" className="h-3.5 w-3.5 rounded-sm object-contain" />
+        <span className="font-semibold">Arbitrum</span>
       </motion.div>
     </div>
   );
