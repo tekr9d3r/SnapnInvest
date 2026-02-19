@@ -18,13 +18,17 @@ const CameraPage = () => {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
       });
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-      }
       setStream(mediaStream);
       setCameraActive(true);
-    } catch {
-      // Camera not available — user can upload instead
+      // Wait for next render so the video element is mounted
+      requestAnimationFrame(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+          videoRef.current.play().catch(console.error);
+        }
+      });
+    } catch (err) {
+      console.error("Camera error:", err);
     }
   }, []);
 
