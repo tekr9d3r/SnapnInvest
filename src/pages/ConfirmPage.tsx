@@ -7,7 +7,7 @@ import { StockLogo } from "@/components/StockLogo";
 import { Stock } from "@/lib/types";
 import { generateTxHash } from "@/lib/wallet";
 import { addHolding } from "@/lib/portfolio";
-import arbitrumLogo from "@/assets/arbitrum-logo.svg";
+import arbitrumLogo from "@/assets/arbitrum-logo.png";
 import robinhoodLogo from "@/assets/robinhood-logo.png";
 
 type Phase = "confirm" | "connecting" | "minting" | "confirming" | "success";
