@@ -14,8 +14,8 @@ type Phase = "confirm" | "connecting" | "minting" | "confirming" | "success";
 
 const PHASE_MESSAGES: Record<string, { title: string; sub: string }> = {
   connecting: { title: "Connecting to Robinhood Chain...", sub: "Establishing secure RPC connection" },
-  minting: { title: "Minting tokenized shares...", sub: "Settling on-chain via Arbitrum • Paying gas in ETH" },
-  confirming: { title: "Confirming on-chain...", sub: "Waiting for block confirmation • ~2s finality" },
+  minting: { title: "Minting tokenized shares...", sub: "Minting on Robinhood Chain • Powered by Arbitrum technology" },
+  confirming: { title: "Confirming on-chain...", sub: "Waiting for block confirmation on Robinhood Chain • ~2s finality" },
 };
 
 const ConfirmPage = () => {
@@ -232,8 +232,8 @@ const ConfirmPage = () => {
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">Network</span>
                   <span className="flex items-center gap-1 text-xs text-foreground">
-                    <img src={arbitrumLogo} alt="" className="h-3 w-3 rounded-sm" />
-                    Arbitrum
+                    <img src={robinhoodLogo} alt="" className="h-3 w-3 rounded-sm" />
+                    Robinhood Chain
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
