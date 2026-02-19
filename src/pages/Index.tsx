@@ -14,12 +14,12 @@ const Index = () => {
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-background px-6 pb-24 pt-16">
-      {/* Logo */}
+      {/* Robinhood Chain badge */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="mb-2"
+        className="mb-2 flex flex-col items-center gap-3"
       >
         <div className="flex items-center gap-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary glow-primary">
@@ -28,6 +28,10 @@ const Index = () => {
           <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
             Snap<span className="text-primary">'n</span>Buy
           </h1>
+        </div>
+        <div className="flex items-center gap-2 rounded-full border border-border bg-secondary/60 px-4 py-1.5">
+          <img src={robinhoodLogo} alt="Robinhood" className="h-5 w-5 rounded-sm object-contain" />
+          <span className="text-xs font-semibold text-foreground">Built on Robinhood Chain</span>
         </div>
       </motion.div>
 
@@ -45,7 +49,7 @@ const Index = () => {
           <span className="text-gradient">Own the stock.</span>
         </h2>
         <p className="mx-auto mt-4 max-w-sm text-base text-muted-foreground">
-          Point your camera at any product, let AI recognize the brand, and invest in tokenized stocks instantly.
+          Point your camera at any product, let AI recognize the brand, and buy tokenized stocks on <span className="font-semibold text-foreground">Robinhood Chain</span>.
         </p>
       </motion.div>
 
