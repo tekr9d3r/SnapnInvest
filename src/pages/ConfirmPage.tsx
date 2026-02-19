@@ -1,22 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, Wallet, Camera, ArrowLeft, Loader2, ExternalLink } from "lucide-react";
+import { Check, Camera, ArrowLeft, Loader2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { StockLogo } from "@/components/StockLogo";
 import { Stock } from "@/lib/types";
-import { connectWallet, shortenAddress, generateTxHash, getBalance } from "@/lib/wallet";
+import { generateTxHash } from "@/lib/wallet";
 import { addHolding } from "@/lib/portfolio";
 
-type Phase = "wallet" | "confirm" | "processing" | "success";
+type Phase = "confirm" | "processing" | "success";
 
 const ConfirmPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { stock, amount } = (location.state as { stock: Stock; amount: number; image: string }) || {};
 
-  const [phase, setPhase] = useState<Phase>("wallet");
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [balance, setBalance] = useState("0");
+  const [phase, setPhase] = useState<Phase>("confirm");
   const [txHash, setTxHash] = useState("");
 
   if (!stock || !amount) {
@@ -25,22 +24,11 @@ const ConfirmPage = () => {
   }
 
   const shares = amount / stock.currentPrice;
-  const ethEquivalent = (amount * 0.00045).toFixed(6);
-
-  const handleConnect = async () => {
-    const addr = await connectWallet();
-    if (addr) {
-      setWalletAddress(addr);
-      const bal = await getBalance(addr);
-      setBalance(bal);
-      setPhase("confirm");
-    }
-  };
 
   const handleConfirm = async () => {
     setPhase("processing");
     // Simulate transaction
-    await new Promise((r) => setTimeout(r, 2500));
+    await new Promise((r) => setTimeout(r, 2200));
     const hash = generateTxHash();
     setTxHash(hash);
     addHolding({
@@ -58,7 +46,7 @@ const ConfirmPage = () => {
     <div className="fixed inset-0 flex flex-col bg-background">
       {/* Top bar */}
       <div className="flex items-center justify-between p-4">
-        {phase !== "processing" && phase !== "success" ? (
+        {phase === "confirm" ? (
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -66,41 +54,13 @@ const ConfirmPage = () => {
           <div className="w-10" />
         )}
         <span className="font-display text-sm font-semibold">
-          {phase === "success" ? "🎉 Done!" : "Confirm Purchase"}
+          {phase === "success" ? "Done!" : "Confirm Purchase"}
         </span>
         <div className="w-10" />
       </div>
 
       <div className="flex flex-1 flex-col items-center justify-center px-6">
         <AnimatePresence mode="wait">
-          {/* Wallet Connect */}
-          {phase === "wallet" && (
-            <motion.div
-              key="wallet"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="flex w-full max-w-sm flex-col items-center text-center"
-            >
-              <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-secondary">
-                <Wallet className="h-9 w-9 text-primary" />
-              </div>
-              <h2 className="font-display text-2xl font-bold text-foreground">
-                Connect Wallet
-              </h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Connect MetaMask to purchase on Robinhood Chain Testnet
-              </p>
-              <Button onClick={handleConnect} className="mt-8 h-14 w-full gap-2 rounded-2xl text-base font-semibold">
-                <Wallet className="h-5 w-5" />
-                Connect MetaMask
-              </Button>
-              <p className="mt-3 text-xs text-muted-foreground">
-                Chain ID: 46630 · Robinhood Testnet
-              </p>
-            </motion.div>
-          )}
-
           {/* Confirm */}
           {phase === "confirm" && (
             <motion.div
@@ -110,24 +70,10 @@ const ConfirmPage = () => {
               exit={{ opacity: 0, y: -20 }}
               className="flex w-full max-w-sm flex-col"
             >
-              {/* Wallet info */}
-              <div className="mb-6 rounded-2xl bg-secondary p-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">Wallet</span>
-                  <span className="text-xs font-mono text-foreground">
-                    {walletAddress ? shortenAddress(walletAddress) : ""}
-                  </span>
-                </div>
-                <div className="mt-1 flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">Balance</span>
-                  <span className="text-xs font-mono text-foreground">{balance} ETH</span>
-                </div>
-              </div>
-
               {/* Order summary */}
               <div className="rounded-2xl border border-border bg-card p-6">
                 <div className="flex items-center gap-3">
-                  <span className="text-3xl">{stock.logo}</span>
+                  <StockLogo ticker={stock.ticker} size="lg" />
                   <div>
                     <p className="font-display text-lg font-bold text-foreground">{stock.name}</p>
                     <p className="text-sm text-muted-foreground">{stock.ticker}</p>
@@ -146,10 +92,6 @@ const ConfirmPage = () => {
                     <span className="text-muted-foreground">Shares</span>
                     <span className="text-foreground">{shares.toFixed(6)}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Est. ETH</span>
-                    <span className="font-mono text-foreground">{ethEquivalent}</span>
-                  </div>
                 </div>
               </div>
 
@@ -157,8 +99,9 @@ const ConfirmPage = () => {
                 onClick={handleConfirm}
                 className="mt-6 h-14 w-full gap-2 rounded-2xl text-base font-semibold"
               >
-                Confirm Purchase
+                Buy ${amount} of {stock.ticker}
               </Button>
+              <p className="mt-3 text-center text-xs text-muted-foreground">Demo · No real money involved</p>
             </motion.div>
           )}
 
@@ -178,10 +121,10 @@ const ConfirmPage = () => {
                 <Loader2 className="h-12 w-12 text-primary" />
               </motion.div>
               <p className="mt-4 font-display text-lg font-semibold text-foreground">
-                Processing Transaction...
+                Processing Purchase...
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Simulating on Robinhood Testnet
+                Simulating transaction
               </p>
             </motion.div>
           )}

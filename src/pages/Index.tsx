@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Camera, Scan, ShoppingCart, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { StockLogo } from "@/components/StockLogo";
 
 const steps = [
   { icon: Camera, label: "Snap", desc: "Take a photo of any product" },
@@ -100,15 +101,16 @@ const Index = () => {
         className="mt-12 flex items-center gap-3"
       >
         {["TSLA", "AMZN", "PLTR", "NFLX", "AMD"].map((ticker, i) => (
-          <motion.span
+          <motion.div
             key={ticker}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.9 + i * 0.1 }}
-            className="rounded-lg bg-secondary px-3 py-1.5 text-xs font-semibold text-muted-foreground"
+            className="flex flex-col items-center gap-1"
           >
-            {ticker}
-          </motion.span>
+            <StockLogo ticker={ticker} size="sm" />
+            <span className="text-[10px] font-semibold text-muted-foreground">{ticker}</span>
+          </motion.div>
         ))}
       </motion.div>
     </div>
