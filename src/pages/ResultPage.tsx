@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Scan, X, Camera } from "lucide-react";
+import { StockLogo } from "@/components/StockLogo";
 import { Button } from "@/components/ui/button";
 import { SUPPORTED_STOCKS, Stock } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -124,7 +125,7 @@ const ResultPage = () => {
               className="flex flex-col items-center"
             >
               <div className="flex items-center gap-3">
-                <span className="text-4xl">{matchedStock.logo}</span>
+                <StockLogo ticker={matchedStock.ticker} size="lg" />
                 <div>
                   <h2 className="font-display text-2xl font-bold text-foreground">
                     {matchedStock.name}

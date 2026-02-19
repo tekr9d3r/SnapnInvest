@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Camera, TrendingUp, TrendingDown } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { StockLogo } from "@/components/StockLogo";
 import { getPortfolioSummary } from "@/lib/portfolio";
 
 const PortfolioPage = () => {
@@ -28,7 +29,7 @@ const PortfolioPage = () => {
           className="flex flex-col items-center pt-24 text-center"
         >
           <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-secondary">
-            <span className="text-4xl">📈</span>
+            <TrendingUp className="h-10 w-10 text-primary" />
           </div>
           <h2 className="font-display text-xl font-bold text-foreground">No holdings yet</h2>
           <p className="mt-2 max-w-xs text-sm text-muted-foreground">
@@ -80,7 +81,7 @@ const PortfolioPage = () => {
                 className="flex items-center justify-between rounded-2xl border border-border bg-card p-4"
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">{s.logo}</span>
+                  <StockLogo ticker={s.ticker} size="sm" />
                   <div>
                     <p className="font-semibold text-foreground">{s.ticker}</p>
                     <p className="text-xs text-muted-foreground">
