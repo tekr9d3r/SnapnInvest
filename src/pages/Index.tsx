@@ -124,20 +124,6 @@ const Index = () => {
         </span>
       </motion.div>
 
-      {/* Footer branding */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.2 }}
-        className="mt-10 flex items-center gap-2 text-[10px] text-muted-foreground"
-      >
-        <span>Powered by</span>
-        <img src={robinhoodLogo} alt="Robinhood" className="h-3.5 w-3.5 rounded-sm object-contain" />
-        <span className="font-semibold">Robinhood Chain</span>
-        <span>+</span>
-        <img src={arbitrumLogo} alt="Arbitrum" className="h-3.5 w-3.5 rounded-sm object-contain" />
-        <span className="font-semibold">Arbitrum</span>
-      </motion.div>
     </div>
   );
 };
