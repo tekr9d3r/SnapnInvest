@@ -170,7 +170,6 @@ const CameraPage = () => {
         ref={fileInputRef}
         type="file"
         accept="image/*"
-        capture="environment"
         className="hidden"
         onChange={handleUpload}
       />
