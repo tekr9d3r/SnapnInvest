@@ -46,6 +46,7 @@ const ConfirmPage = () => {
       ticker: stock.ticker,
       name: stock.name,
       logo: stock.logo,
+      logoUrl: stock.logoUrl,
       amountInvested: amount,
       shares,
       priceAtPurchase: stock.currentPrice,
@@ -86,7 +87,7 @@ const ConfirmPage = () => {
               {/* Order summary */}
               <div className="rounded-2xl border border-border bg-card p-6">
                 <div className="flex items-center gap-3">
-                  <StockLogo ticker={stock.ticker} size="lg" />
+                  <StockLogo ticker={stock.ticker} logoUrl={stock.logoUrl} size="lg" />
                   <div>
                     <p className="font-display text-lg font-bold text-foreground">{stock.name}</p>
                     <p className="text-sm text-muted-foreground">{stock.ticker}</p>

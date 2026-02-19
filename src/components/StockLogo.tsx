@@ -1,19 +1,8 @@
-import tslaLogo from "@/assets/stocks/tsla.png";
-import amznLogo from "@/assets/stocks/amzn.png";
-import pltrLogo from "@/assets/stocks/pltr.png";
-import nflxLogo from "@/assets/stocks/nflx.png";
-import amdLogo from "@/assets/stocks/amd.png";
-
-const LOGOS: Record<string, string> = {
-  TSLA: tslaLogo,
-  AMZN: amznLogo,
-  PLTR: pltrLogo,
-  NFLX: nflxLogo,
-  AMD: amdLogo,
-};
+import { useState } from "react";
 
 interface StockLogoProps {
   ticker: string;
+  logoUrl?: string;
   size?: "sm" | "md" | "lg";
   className?: string;
 }
@@ -24,20 +13,24 @@ const sizeMap = {
   lg: "h-14 w-14",
 };
 
-export const StockLogo = ({ ticker, size = "md", className = "" }: StockLogoProps) => {
-  const src = LOGOS[ticker];
-  if (!src) {
+export const StockLogo = ({ ticker, logoUrl, size = "md", className = "" }: StockLogoProps) => {
+  const [imgError, setImgError] = useState(false);
+  const src = logoUrl || `https://assets.parqet.com/logos/symbol/${ticker}`;
+
+  if (imgError) {
     return (
       <div className={`${sizeMap[size]} flex items-center justify-center rounded-xl bg-secondary text-xs font-bold text-muted-foreground ${className}`}>
         {ticker}
       </div>
     );
   }
+
   return (
     <img
       src={src}
       alt={`${ticker} logo`}
       className={`${sizeMap[size]} rounded-xl object-contain bg-white p-1 ${className}`}
+      onError={() => setImgError(true)}
     />
   );
 };

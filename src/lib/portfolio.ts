@@ -1,4 +1,4 @@
-import { Holding, PortfolioState, SUPPORTED_STOCKS } from "./types";
+import { Holding, PortfolioState } from "./types";
 
 const STORAGE_KEY = "snapnbuy_portfolio";
 
@@ -27,10 +27,10 @@ export function addHolding(holding: Omit<Holding, "id" | "date">): Holding {
 
 export function getPortfolioSummary() {
   const portfolio = getPortfolio();
-  const grouped = new Map<string, { shares: number; invested: number }>();
+  const grouped = new Map<string, { shares: number; invested: number; name: string; logoUrl?: string; priceAtPurchase: number }>();
 
   for (const h of portfolio.holdings) {
-    const existing = grouped.get(h.ticker) || { shares: 0, invested: 0 };
+    const existing = grouped.get(h.ticker) || { shares: 0, invested: 0, name: h.name, logoUrl: h.logoUrl, priceAtPurchase: h.priceAtPurchase };
     existing.shares += h.shares;
     existing.invested += h.amountInvested;
     grouped.set(h.ticker, existing);
@@ -38,13 +38,13 @@ export function getPortfolioSummary() {
 
   let totalValue = 0;
   const summaries = Array.from(grouped.entries()).map(([ticker, data]) => {
-    const stock = SUPPORTED_STOCKS.find((s) => s.ticker === ticker);
-    const currentValue = data.shares * (stock?.currentPrice || 0);
+    // Use purchase price as estimate since we don't have live prices stored locally
+    const currentValue = data.shares * data.priceAtPurchase;
     totalValue += currentValue;
     return {
       ticker,
-      name: stock?.name || ticker,
-      logo: stock?.logo || "📈",
+      name: data.name || ticker,
+      logoUrl: data.logoUrl,
       shares: data.shares,
       invested: data.invested,
       currentValue,
