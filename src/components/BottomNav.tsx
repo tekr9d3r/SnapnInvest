@@ -1,9 +1,10 @@
-import { Camera, PieChart } from "lucide-react";
+import { Camera, Home, PieChart } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
 const tabs = [
-  { path: "/", label: "Snap", icon: Camera },
+  { path: "/", label: "Home", icon: Home },
+  { path: "/camera", label: "Snap", icon: Camera },
   { path: "/portfolio", label: "Portfolio", icon: PieChart },
 ];
 
@@ -12,7 +13,7 @@ export function BottomNav() {
   const navigate = useNavigate();
 
   // Hide nav on camera/result pages
-  if (["/camera", "/result", "/confirm"].includes(location.pathname)) return null;
+  if (["/result", "/confirm"].includes(location.pathname)) return null;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/80 backdrop-blur-xl">
