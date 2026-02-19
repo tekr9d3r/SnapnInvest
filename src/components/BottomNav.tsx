@@ -13,7 +13,7 @@ export function BottomNav() {
   const navigate = useNavigate();
 
   // Hide nav on camera/result pages
-  if (["/result", "/confirm"].includes(location.pathname)) return null;
+  if (["/camera", "/result", "/confirm"].includes(location.pathname)) return null;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/80 backdrop-blur-xl">
