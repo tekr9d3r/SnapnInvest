@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Camera, Scan, ShoppingCart, ArrowRight, Clock, Shield, Zap } from "lucide-react";
+import { Camera, Scan, ShoppingCart, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { StockLogo } from "@/components/StockLogo";
@@ -12,11 +12,6 @@ const steps = [
   { icon: ShoppingCart, label: "Buy", desc: "Purchase tokenized stock" },
 ];
 
-const features = [
-  { icon: Clock, label: "24/7 Trading", desc: "Trade anytime, no market hours" },
-  { icon: Shield, label: "Secure", desc: "On-chain settlement via Arbitrum" },
-  { icon: Zap, label: "Instant", desc: "Near-zero gas fees" },
-];
 
 const Index = () => {
   const navigate = useNavigate();
@@ -93,25 +88,6 @@ const Index = () => {
         </Button>
       </motion.div>
 
-      {/* Features: 24/7, Secure, Instant */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.5 }}
-        className="mt-12 w-full max-w-sm"
-      >
-        <div className="flex items-start justify-between gap-2">
-          {features.map((f) => (
-            <div key={f.label} className="flex flex-1 flex-col items-center text-center">
-              <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-secondary">
-                <f.icon className="h-5 w-5 text-primary" />
-              </div>
-              <span className="text-xs font-semibold text-foreground">{f.label}</span>
-              <span className="mt-0.5 text-[10px] text-muted-foreground">{f.desc}</span>
-            </div>
-          ))}
-        </div>
-      </motion.div>
 
       {/* How it works */}
       <motion.div
