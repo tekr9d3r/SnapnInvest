@@ -1,7 +1,7 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Camera, TrendingUp, TrendingDown } from "lucide-react";
-import { motion } from "framer-motion";
+import { Camera, TrendingUp, TrendingDown, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { StockLogo } from "@/components/StockLogo";
 import { getPortfolioSummary } from "@/lib/portfolio";
@@ -12,11 +12,40 @@ const PortfolioPage = () => {
     () => getPortfolioSummary(),
     []
   );
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   const isUp = totalGainLoss >= 0;
 
   return (
     <div className="min-h-screen bg-background px-6 pb-24 pt-6">
+      {/* Lightbox */}
+      <AnimatePresence>
+        {lightboxImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+            onClick={() => setLightboxImage(null)}
+          >
+            <button
+              className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white"
+              onClick={() => setLightboxImage(null)}
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <motion.img
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+              src={lightboxImage}
+              alt="Full size"
+              className="max-h-full max-w-full rounded-xl object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Header */}
       <div className="mb-6">
         <h1 className="font-display text-2xl font-bold text-foreground">Portfolio</h1>
@@ -82,16 +111,19 @@ const PortfolioPage = () => {
               >
                 {/* Captured photo */}
                 {s.latestImage && (
-                  <div className="relative h-36 w-full overflow-hidden">
+                  <div
+                    className="relative h-36 w-full cursor-zoom-in overflow-hidden"
+                    onClick={() => setLightboxImage(s.latestImage!)}
+                  >
                     <img
                       src={s.latestImage}
                       alt={`Photo taken to buy ${s.ticker}`}
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
                     />
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent to-card/80" />
                     <div className="absolute bottom-2 left-3 flex items-center gap-1.5">
                       <Camera className="h-3 w-3 text-muted-foreground" />
-                      <span className="text-[10px] text-muted-foreground">Snapped to buy</span>
+                      <span className="text-[10px] text-muted-foreground">Tap to expand</span>
                     </div>
                   </div>
                 )}
