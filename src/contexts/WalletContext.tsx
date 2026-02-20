@@ -28,6 +28,20 @@ const WalletContext = createContext<WalletContextValue>({
 
 async function switchToRobinhoodChain(): Promise<boolean> {
   if (!window.ethereum) return false;
+  
+  // Check if already on the right chain
+  try {
+    const currentChainId = await window.ethereum.request({ method: "eth_chainId" }) as string;
+    console.log("Current chain:", currentChainId, "Target:", ROBINHOOD_CHAIN.chainId);
+    if (currentChainId.toLowerCase() === ROBINHOOD_CHAIN.chainId.toLowerCase()) {
+      console.log("Already on Robinhood Chain");
+      return true;
+    }
+  } catch (err) {
+    console.error("Failed to get current chain:", err);
+  }
+
+  // Try switching
   try {
     await window.ethereum.request({
       method: "wallet_switchEthereumChain",
@@ -35,8 +49,8 @@ async function switchToRobinhoodChain(): Promise<boolean> {
     });
     return true;
   } catch (switchError: any) {
-    // Chain not added yet — add it
-    if (switchError?.code === 4902) {
+    // Chain not added yet (4902) or unrecognized chain
+    if (switchError?.code === 4902 || switchError?.code === -32603) {
       try {
         await window.ethereum.request({
           method: "wallet_addEthereumChain",
@@ -49,11 +63,12 @@ async function switchToRobinhoodChain(): Promise<boolean> {
           }],
         });
         return true;
-      } catch {
+      } catch (addErr) {
+        console.error("Failed to add chain:", addErr);
         return false;
       }
     }
-    // User rejected
+    console.error("Failed to switch chain:", switchError);
     return false;
   }
 }
