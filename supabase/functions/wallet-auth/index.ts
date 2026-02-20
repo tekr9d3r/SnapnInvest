@@ -1,11 +1,14 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { ethers } from "https://esm.sh/ethers@6.16.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+// Minimal EIP-191 signature recovery using Web Crypto
+// We use ethers only for verifyMessage
+import { ethers } from "https://esm.sh/ethers@6.16.0";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -14,6 +17,7 @@ Deno.serve(async (req) => {
 
   try {
     const { address, signature, message } = await req.json();
+    console.log("wallet-auth called for address:", address);
 
     if (!address || !signature || !message) {
       return new Response(
@@ -23,42 +27,61 @@ Deno.serve(async (req) => {
     }
 
     // Verify the signature
-    const recoveredAddress = ethers.verifyMessage(message, signature);
-
-    if (recoveredAddress.toLowerCase() !== address.toLowerCase()) {
+    let recoveredAddress: string;
+    try {
+      recoveredAddress = ethers.verifyMessage(message, signature);
+    } catch (verifyErr) {
+      console.error("Signature verification failed:", verifyErr);
       return new Response(
-        JSON.stringify({ error: "Invalid signature" }),
+        JSON.stringify({ error: "Invalid signature format" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Create admin Supabase client
+    if (recoveredAddress.toLowerCase() !== address.toLowerCase()) {
+      console.error("Address mismatch:", recoveredAddress, "vs", address);
+      return new Response(
+        JSON.stringify({ error: "Signature does not match address" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("Signature verified for:", address);
+
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Check if user with this wallet exists
+    const walletLower = address.toLowerCase();
+    const fakeEmail = `${walletLower}@wallet.snapnbuy`;
+
+    // Check if user exists by looking up profile
     const { data: existingProfile } = await supabaseAdmin
       .from("profiles")
       .select("id")
-      .eq("wallet_address", address.toLowerCase())
+      .eq("wallet_address", walletLower)
       .maybeSingle();
 
     let userId: string;
 
+    // Deterministic password derived from wallet + service role key suffix
+    const tempPassword = `wallet_${walletLower}_${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!.slice(-12)}`;
+
     if (existingProfile) {
       userId = existingProfile.id;
+      console.log("Existing user found:", userId);
     } else {
-      // Create new user in auth.users with wallet as email placeholder
-      const fakeEmail = `${address.toLowerCase()}@wallet.snapnbuy`;
+      console.log("Creating new user for wallet:", walletLower);
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email: fakeEmail,
+        password: tempPassword,
         email_confirm: true,
-        user_metadata: { wallet_address: address.toLowerCase() },
+        user_metadata: { wallet_address: walletLower },
       });
 
       if (createError || !newUser.user) {
+        console.error("User creation failed:", createError);
         return new Response(
           JSON.stringify({ error: "Failed to create user", details: createError?.message }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -66,20 +89,13 @@ Deno.serve(async (req) => {
       }
 
       userId = newUser.user.id;
+      console.log("User created:", userId);
     }
 
-    // Generate a JWT for this user using admin API
-    // We use generateLink to get a magic link, then extract the token
-    // Actually, the cleanest way is to sign in the user directly
-    const fakeEmail = `${address.toLowerCase()}@wallet.snapnbuy`;
-    const tempPassword = `wallet_${address.toLowerCase()}_${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!.slice(-8)}`;
+    // Ensure password is set (for returning users too)
+    await supabaseAdmin.auth.admin.updateUser(userId, { password: tempPassword });
 
-    // Update the user's password so we can sign them in
-    await supabaseAdmin.auth.admin.updateUser(userId, {
-      password: tempPassword,
-    });
-
-    // Sign in to get a session
+    // Sign in to get session tokens
     const anonClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!
@@ -91,24 +107,25 @@ Deno.serve(async (req) => {
     });
 
     if (signInError || !session.session) {
+      console.error("Sign in failed:", signInError);
       return new Response(
         JSON.stringify({ error: "Failed to create session", details: signInError?.message }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    console.log("Session created for user:", userId);
+
     return new Response(
       JSON.stringify({
         access_token: session.session.access_token,
         refresh_token: session.session.refresh_token,
-        user: {
-          id: userId,
-          wallet_address: address.toLowerCase(),
-        },
+        user: { id: userId, wallet_address: walletLower },
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
+    console.error("Unhandled error:", err);
     return new Response(
       JSON.stringify({ error: "Internal error", details: String(err) }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

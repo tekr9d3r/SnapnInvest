@@ -96,18 +96,35 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
       // Request signature for auth
       const message = `Sign in to Snap'n'Buy\n\nWallet: ${addr}\nTimestamp: ${Date.now()}`;
-      const signature = await window.ethereum!.request({
-        method: "personal_sign",
-        params: [message, addr],
-      }) as string;
+      let signature: string;
+      try {
+        signature = await window.ethereum!.request({
+          method: "personal_sign",
+          params: [message, addr],
+        }) as string;
+      } catch (sigErr) {
+        console.error("User rejected signature:", sigErr);
+        setIsConnecting(false);
+        return;
+      }
 
-      // Call wallet-auth edge function
-      const { data, error } = await supabase.functions.invoke("wallet-auth", {
-        body: { address: addr, signature, message },
+      // Call wallet-auth edge function using fetch for better error handling
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      
+      const response = await fetch(`${supabaseUrl}/functions/v1/wallet-auth`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": supabaseKey,
+        },
+        body: JSON.stringify({ address: addr, signature, message }),
       });
 
-      if (error || !data?.access_token) {
-        console.error("Wallet auth failed:", error || data);
+      const data = await response.json();
+      
+      if (!response.ok || !data?.access_token) {
+        console.error("Wallet auth failed:", data);
         setIsConnecting(false);
         return;
       }
