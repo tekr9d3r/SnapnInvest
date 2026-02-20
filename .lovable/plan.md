@@ -1,62 +1,113 @@
 
 
-# Support All Publicly Traded Stocks
+# Snap'n'Buy: Onchain Mode
 
-## Goal
-Replace the hardcoded 5-stock limitation with dynamic support for any publicly traded stock, using real market data and logos -- without maintaining a local database.
+## Overview
 
-## Approach
+Add a **Demo / Onchain toggle** in the bottom nav. The existing Demo mode stays untouched. The new Onchain mode introduces real wallet connectivity, database-backed portfolio storage, and wallet-based authentication -- all while keeping the camera minting flow as a simulated experience.
 
-### 1. Dynamic Stock Logo via URL Service
-Instead of bundled PNG assets, use a free logo URL service. The `StockLogo` component will render logos from a URL like:
-- `https://logo.clearbit.com/{companyDomain}` or
-- `https://assets.parqet.com/logos/symbol/{TICKER}` or similar
+## How It Works
 
-Fall back to showing the ticker text if no logo loads.
+### Demo vs Onchain Toggle
+- A pill-style switch (Demo | Onchain) sits above the bottom nav tabs
+- Selection is persisted in localStorage and provided via React Context to the entire app
+- All pages adapt their behavior based on the active mode
 
-### 2. New Backend Function: `stock-lookup`
-A new backend function that takes a ticker symbol and returns:
-- Whether the stock exists
-- Company name
-- Current price (from a free finance API like Yahoo Finance's unofficial endpoint)
-- Logo URL
+### Wallet-Only Authentication (Onchain Mode)
+The flow:
+1. User clicks "Connect Wallet" -- MetaMask prompts for account access
+2. App requests a signature of a unique nonce message (proves wallet ownership)
+3. An edge function verifies the signature, creates/finds the user in the database, and returns a Supabase JWT
+4. The app uses that JWT for all subsequent database operations
 
-This keeps all external API calls server-side and avoids needing an API key.
+This means: **no email, no password** -- your wallet IS your identity.
 
-### 3. Update Brand Identification
-The existing AI brand identification function will be updated to:
-- Identify ANY publicly traded company (not just 5)
-- Return the ticker symbol and company name
-- Remove the hardcoded ticker whitelist
+### Database Schema
 
-### 4. Update the Result Flow
-After the AI identifies a brand:
-1. Call `stock-lookup` with the ticker to get real price data
-2. Display the stock with its real price and dynamic logo
-3. Proceed to purchase as before
+**profiles table**
+- `id` (uuid, PK, references auth.users)
+- `wallet_address` (text, unique, not null)
+- `created_at` (timestamptz)
+
+**holdings table**
+- `id` (uuid, PK)
+- `user_id` (uuid, references auth.users, not null)
+- `ticker` (text, not null)
+- `name` (text)
+- `logo_url` (text)
+- `amount_invested` (numeric)
+- `shares` (numeric)
+- `price_at_purchase` (numeric)
+- `captured_image_url` (text) -- URL from storage bucket
+- `tx_hash` (text)
+- `created_at` (timestamptz)
+
+**Storage bucket**: `captured-images` (public) for portfolio photos
+
+RLS policies ensure users can only read/write their own holdings and profile.
+
+### Portfolio in Onchain Mode
+- Shows real ETH balance from connected wallet (via RPC call)
+- Shows "fake" minted token holdings stored in the database (from Snap'n'Buy purchases)
+- Both are displayed together: real ETH at the top, then tokenized stock holdings below
+- Captured images are stored in Cloud storage (not localStorage), accessible from any device
+
+### Camera + Minting Flow (Onchain Mode)
+- Same camera and AI brand identification flow as Demo
+- Confirmation screen still simulates the on-chain transaction (fake tx hash, animated phases)
+- But instead of saving to localStorage, it:
+  - Uploads the compressed image to Cloud storage
+  - Saves the holding record to the database
+  - Links it to the authenticated user's profile
+
+### Combining Real Wallet + Fake Tokens
+The portfolio will have two sections:
+1. **Wallet Assets** -- real ETH balance read from the connected wallet on Robinhood Chain
+2. **Snapped Stocks** -- simulated tokenized holdings from Snap'n'Buy, stored in the database with a "Simulated" badge
+
+This makes it clear what's real vs demo while showing them together.
 
 ## Technical Details
 
-### Files to Create
-- `supabase/functions/stock-lookup/index.ts` -- Fetches real stock price from Yahoo Finance's free chart API (`https://query1.finance.yahoo.com/v8/finance/chart/{TICKER}`) and constructs a logo URL
+### New Files
+- `src/contexts/AppModeContext.tsx` -- React context providing `mode` ("demo" | "onchain") and `setMode`
+- `src/contexts/WalletContext.tsx` -- React context managing wallet connection state, address, auth session
+- `src/components/ModeToggle.tsx` -- Demo/Onchain pill switch component
+- `src/pages/OnchainPortfolioPage.tsx` -- Portfolio page for onchain mode with real balances + DB holdings
 
-### Files to Modify
-- `src/lib/types.ts` -- Remove `SUPPORTED_STOCKS` and `BRAND_KEYWORDS` constants, keep `Stock` interface (add optional `logoUrl` field)
-- `src/components/StockLogo.tsx` -- Accept a `logoUrl` prop; fall back to ticker text if image fails to load. Remove hardcoded PNG imports
-- `supabase/functions/identify-brand/index.ts` -- Remove ticker whitelist; instruct AI to return any valid US stock ticker
-- `src/pages/ResultPage.tsx` -- After AI returns a ticker, call `stock-lookup` to get price/name/logo, then build the `Stock` object dynamically
-- `src/pages/ConfirmPage.tsx` -- Use `logoUrl` from the stock object instead of the `StockLogo` component's hardcoded map
-- `src/lib/portfolio.ts` -- Update `getPortfolioSummary` to not rely on `SUPPORTED_STOCKS` for current price; store `logoUrl` in holdings
-- `src/lib/types.ts` -- Add `logoUrl` to `Holding` interface
-- `src/pages/PortfolioPage.tsx` -- Pass `logoUrl` to `StockLogo`
-- `src/pages/Index.tsx` -- Update the "Supported stocks" section to say something like "Works with any stock" instead of showing 5 specific tickers
+### Edge Functions
+- `supabase/functions/wallet-auth/index.ts` -- Verifies wallet signature, creates user if needed, returns JWT
 
-### Stock Logo Strategy
-Use `https://logo.clearbit.com/{domain}` where domain comes from the AI or a simple mapping. Alternatively, use `https://assets.parqet.com/logos/symbol/{TICKER}` which works directly with tickers. The `StockLogo` component will handle load errors gracefully with a text fallback.
+### Modified Files
+- `src/components/BottomNav.tsx` -- Add mode toggle above tabs; conditionally show "Connect Wallet" instead of some tabs when in Onchain mode
+- `src/App.tsx` -- Wrap with AppModeContext and WalletContext providers; route to correct portfolio page based on mode
+- `src/pages/ConfirmPage.tsx` -- In onchain mode, save holding to database + upload image to storage instead of localStorage
+- `src/pages/Index.tsx` -- In onchain mode, show "Connect Wallet" CTA if not connected
 
-### Yahoo Finance API (no key needed)
+### Database Migrations
+1. Create `profiles` table with wallet_address
+2. Create `holdings` table
+3. Create `captured-images` storage bucket
+4. Set up RLS policies (users access only their own data)
+5. Create trigger to auto-create profile on auth.users insert
+
+### Authentication Edge Function Logic
+```text
+Client                    Edge Function              Database
+  |                           |                         |
+  |-- POST {address, sig} --> |                         |
+  |                           |-- verify signature      |
+  |                           |-- upsert user --------> |
+  |                           |<-- user record ---------|
+  |                           |-- sign JWT              |
+  |<-- { token, user } -------|                         |
 ```
-GET https://query1.finance.yahoo.com/v8/finance/chart/{TICKER}?range=1d&interval=1d
-```
-Returns current price, company name, and currency. Free, no authentication required.
+
+The edge function uses `SUPABASE_SERVICE_ROLE_KEY` to create users in auth.users and sign JWTs, so no external auth provider is needed.
+
+### Key Considerations
+- **No MetaMask on mobile?** Show a message directing users to use MetaMask's in-app browser or a compatible wallet browser
+- **Session persistence**: JWT stored in Supabase client session; user stays logged in until they disconnect wallet
+- **localStorage quota**: In Onchain mode, images go to cloud storage, solving the 5MB limit entirely
+- **Demo mode unchanged**: All existing localStorage-based logic remains for Demo mode
 
