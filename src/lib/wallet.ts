@@ -13,8 +13,8 @@ export const ROBINHOOD_CHAIN = {
   chainId: "0xB636", // 46630
   chainName: "Robinhood Chain Testnet",
   nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
-  rpcUrls: ["https://testnet-rpc.robinhoodchain.com"],
-  blockExplorerUrls: ["https://testnet-explorer.robinhoodchain.com"],
+  rpcUrls: ["https://rpc.testnet.chain.robinhood.com"],
+  blockExplorerUrls: ["https://explorer.testnet.chain.robinhood.com"],
 };
 
 export async function connectWallet(): Promise<string | null> {
