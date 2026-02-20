@@ -13,7 +13,7 @@ export const ROBINHOOD_CHAIN = {
   chainId: "0xB636", // 46630
   chainName: "Robinhood Chain Testnet",
   nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
-  rpcUrls: ["https://rpc.testnet.chain.robinhood.com"],
+  rpcUrls: ["https://rpc.testnet.chain.robinhood.com", "https://sequencer.testnet.chain.robinhood.com"],
   blockExplorerUrls: ["https://explorer.testnet.chain.robinhood.com"],
 };
 
