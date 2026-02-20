@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppModeProvider } from "@/contexts/AppModeContext";
 import { WalletProvider } from "@/contexts/WalletContext";
 import { BottomNav } from "@/components/BottomNav";
+import { TopBar } from "@/components/TopBar";
 import Index from "./pages/Index";
 import CameraPage from "./pages/CameraPage";
 import ResultPage from "./pages/ResultPage";
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="/portfolio" element={<PortfolioRouter />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <TopBar />
             <BottomNav />
           </WalletProvider>
         </AppModeProvider>
