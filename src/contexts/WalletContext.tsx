@@ -1,7 +1,8 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { connectWallet as connectMetaMask, getBalance, shortenAddress } from "@/lib/wallet";
+import { connectWallet as connectMetaMask, getBalance, shortenAddress, ROBINHOOD_CHAIN } from "@/lib/wallet";
 import { useAppMode } from "./AppModeContext";
+import { toast } from "@/hooks/use-toast";
 
 interface WalletContextValue {
   address: string | null;
@@ -24,6 +25,38 @@ const WalletContext = createContext<WalletContextValue>({
   connect: async () => {},
   disconnect: () => {},
 });
+
+async function switchToRobinhoodChain(): Promise<boolean> {
+  if (!window.ethereum) return false;
+  try {
+    await window.ethereum.request({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: ROBINHOOD_CHAIN.chainId }],
+    });
+    return true;
+  } catch (switchError: any) {
+    // Chain not added yet — add it
+    if (switchError?.code === 4902) {
+      try {
+        await window.ethereum.request({
+          method: "wallet_addEthereumChain",
+          params: [{
+            chainId: ROBINHOOD_CHAIN.chainId,
+            chainName: ROBINHOOD_CHAIN.chainName,
+            nativeCurrency: ROBINHOOD_CHAIN.nativeCurrency,
+            rpcUrls: ROBINHOOD_CHAIN.rpcUrls,
+            blockExplorerUrls: ROBINHOOD_CHAIN.blockExplorerUrls,
+          }],
+        });
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    // User rejected
+    return false;
+  }
+}
 
 export function WalletProvider({ children }: { children: ReactNode }) {
   const { mode } = useAppMode();
@@ -86,32 +119,50 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }, [address]);
 
   const connect = useCallback(async () => {
+    if (!window.ethereum) {
+      toast({ title: "MetaMask not found", description: "Please install MetaMask to continue.", variant: "destructive" });
+      window.open("https://metamask.io/download/", "_blank");
+      return;
+    }
+
     setIsConnecting(true);
     try {
+      // Step 1: Connect wallet
       const addr = await connectMetaMask();
       if (!addr) {
+        toast({ title: "Connection cancelled", description: "Wallet connection was rejected.", variant: "destructive" });
         setIsConnecting(false);
         return;
       }
 
-      // Request signature for auth
+      // Step 2: Switch to Robinhood Chain
+      const switched = await switchToRobinhoodChain();
+      if (!switched) {
+        toast({ title: "Wrong network", description: "Please switch to Robinhood Chain to continue.", variant: "destructive" });
+        setIsConnecting(false);
+        return;
+      }
+
+      // Step 3: Request signature for auth
       const message = `Sign in to Snap'n'Buy\n\nWallet: ${addr}\nTimestamp: ${Date.now()}`;
       let signature: string;
       try {
-        signature = await window.ethereum!.request({
+        signature = await window.ethereum.request({
           method: "personal_sign",
           params: [message, addr],
         }) as string;
       } catch (sigErr) {
         console.error("User rejected signature:", sigErr);
+        toast({ title: "Signature rejected", description: "You need to sign the message to authenticate.", variant: "destructive" });
         setIsConnecting(false);
         return;
       }
 
-      // Call wallet-auth edge function using fetch for better error handling
+      // Step 4: Authenticate via edge function
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      
+
+      console.log("Calling wallet-auth edge function...");
       const response = await fetch(`${supabaseUrl}/functions/v1/wallet-auth`, {
         method: "POST",
         headers: {
@@ -122,14 +173,16 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       });
 
       const data = await response.json();
-      
+      console.log("wallet-auth response:", response.status, data);
+
       if (!response.ok || !data?.access_token) {
         console.error("Wallet auth failed:", data);
+        toast({ title: "Authentication failed", description: data?.error || "Could not authenticate wallet.", variant: "destructive" });
         setIsConnecting(false);
         return;
       }
 
-      // Set session in Supabase client
+      // Step 5: Set session
       await supabase.auth.setSession({
         access_token: data.access_token,
         refresh_token: data.refresh_token,
@@ -138,8 +191,11 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       setAddress(addr.toLowerCase());
       const bal = await getBalance(addr);
       setBalance(bal);
+
+      toast({ title: "Wallet connected!", description: `Connected as ${shortenAddress(addr)}` });
     } catch (err) {
       console.error("Wallet connection failed:", err);
+      toast({ title: "Connection failed", description: String(err), variant: "destructive" });
     } finally {
       setIsConnecting(false);
     }
@@ -151,6 +207,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     setBalance("0");
     setIsAuthenticated(false);
     setUserId(null);
+    toast({ title: "Wallet disconnected" });
   }, []);
 
   return (
