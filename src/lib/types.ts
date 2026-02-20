@@ -17,6 +17,7 @@ export interface Holding {
   shares: number;
   priceAtPurchase: number;
   date: string;
+  capturedImage?: string; // compressed base64 image taken at purchase
 }
 
 export interface PortfolioState {
