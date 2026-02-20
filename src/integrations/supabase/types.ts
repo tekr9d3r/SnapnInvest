@@ -14,7 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      holdings: {
+        Row: {
+          amount_invested: number | null
+          captured_image_url: string | null
+          created_at: string
+          id: string
+          logo_url: string | null
+          name: string | null
+          price_at_purchase: number | null
+          shares: number | null
+          ticker: string
+          tx_hash: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_invested?: number | null
+          captured_image_url?: string | null
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name?: string | null
+          price_at_purchase?: number | null
+          shares?: number | null
+          ticker: string
+          tx_hash?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_invested?: number | null
+          captured_image_url?: string | null
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name?: string | null
+          price_at_purchase?: number | null
+          shares?: number | null
+          ticker?: string
+          tx_hash?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          wallet_address: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          wallet_address: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

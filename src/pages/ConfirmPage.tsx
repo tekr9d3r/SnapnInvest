@@ -8,6 +8,9 @@ import { Stock } from "@/lib/types";
 import { generateTxHash } from "@/lib/wallet";
 import { addHolding } from "@/lib/portfolio";
 import { compressImage } from "@/lib/imageUtils";
+import { useAppMode } from "@/contexts/AppModeContext";
+import { useWallet } from "@/contexts/WalletContext";
+import { supabase } from "@/integrations/supabase/client";
 import arbitrumLogo from "@/assets/arbitrum-logo.png";
 import robinhoodLogo from "@/assets/robinhood-logo.png";
 
@@ -19,10 +22,17 @@ const PHASE_MESSAGES: Record<string, { title: string; sub: string }> = {
   confirming: { title: "Confirming on-chain...", sub: "Waiting for block confirmation on Robinhood Chain • ~2s finality" },
 };
 
+async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
+  const res = await fetch(dataUrl);
+  return res.blob();
+}
+
 const ConfirmPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { stock, amount, image } = (location.state as { stock: Stock; amount: number; image: string }) || {};
+  const { mode } = useAppMode();
+  const { isAuthenticated, userId } = useWallet();
 
   const [phase, setPhase] = useState<Phase>("confirm");
   const [txHash, setTxHash] = useState("");
@@ -44,28 +54,63 @@ const ConfirmPage = () => {
     const hash = generateTxHash();
     setTxHash(hash);
 
-    // Compress the captured image before saving
-    let compressedImage: string | undefined;
-    if (image) {
-      try {
-        compressedImage = await compressImage(image, 800, 0.6);
-      } catch {
-        compressedImage = undefined;
+    if (mode === "onchain" && isAuthenticated && userId) {
+      // Upload image to storage and save holding to database
+      let capturedImageUrl: string | undefined;
+      if (image) {
+        try {
+          const compressed = await compressImage(image, 800, 0.6);
+          const blob = await dataUrlToBlob(compressed);
+          const fileName = `${userId}/${Date.now()}_${stock.ticker}.jpg`;
+          const { data: uploadData } = await supabase.storage
+            .from("captured-images")
+            .upload(fileName, blob, { contentType: "image/jpeg" });
+          if (uploadData?.path) {
+            const { data: urlData } = supabase.storage
+              .from("captured-images")
+              .getPublicUrl(uploadData.path);
+            capturedImageUrl = urlData.publicUrl;
+          }
+        } catch (err) {
+          console.error("Image upload failed:", err);
+        }
       }
-    }
 
-    addHolding(
-      {
+      await supabase.from("holdings").insert({
+        user_id: userId,
         ticker: stock.ticker,
         name: stock.name,
-        logo: stock.logo,
-        logoUrl: stock.logoUrl,
-        amountInvested: amount,
+        logo_url: stock.logoUrl || null,
+        amount_invested: amount,
         shares,
-        priceAtPurchase: stock.currentPrice,
-      },
-      compressedImage
-    );
+        price_at_purchase: stock.currentPrice,
+        captured_image_url: capturedImageUrl || null,
+        tx_hash: hash,
+      } as any);
+    } else {
+      // Demo mode: save to localStorage
+      let compressedImage: string | undefined;
+      if (image) {
+        try {
+          compressedImage = await compressImage(image, 800, 0.6);
+        } catch {
+          compressedImage = undefined;
+        }
+      }
+      addHolding(
+        {
+          ticker: stock.ticker,
+          name: stock.name,
+          logo: stock.logo,
+          logoUrl: stock.logoUrl,
+          amountInvested: amount,
+          shares,
+          priceAtPurchase: stock.currentPrice,
+        },
+        compressedImage
+      );
+    }
+
     setPhase("success");
   };
 
@@ -99,7 +144,6 @@ const ConfirmPage = () => {
               exit={{ opacity: 0, y: -20 }}
               className="flex w-full max-w-sm flex-col"
             >
-              {/* Order summary */}
               <div className="rounded-2xl border border-border bg-card p-6">
                 <div className="flex items-center gap-3">
                   <StockLogo ticker={stock.ticker} logoUrl={stock.logoUrl} size="lg" />
@@ -135,7 +179,6 @@ const ConfirmPage = () => {
                 </div>
               </div>
 
-              {/* Chain badges */}
               <div className="mt-4 flex items-center justify-center gap-3">
                 <div className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1">
                   <img src={robinhoodLogo} alt="" className="h-3.5 w-3.5 rounded-sm" />
@@ -153,7 +196,9 @@ const ConfirmPage = () => {
               >
                 Buy ${amount} of {stock.ticker}
               </Button>
-              <p className="mt-3 text-center text-xs text-muted-foreground">Demo · No real money involved</p>
+              <p className="mt-3 text-center text-xs text-muted-foreground">
+                {mode === "onchain" ? "Simulated minting · No real on-chain transaction" : "Demo · No real money involved"}
+              </p>
             </motion.div>
           )}
 
@@ -166,7 +211,6 @@ const ConfirmPage = () => {
               exit={{ opacity: 0 }}
               className="flex flex-col items-center text-center"
             >
-              {/* Animated icon */}
               <div className="relative mb-6">
                 <motion.div
                   animate={{ rotate: 360 }}
@@ -189,14 +233,12 @@ const ConfirmPage = () => {
                 {PHASE_MESSAGES[phase]?.sub}
               </p>
 
-              {/* Chain info */}
               <div className="mt-6 flex items-center gap-3">
                 <img src={robinhoodLogo} alt="" className="h-5 w-5 rounded-sm" />
                 <span className="text-xs text-muted-foreground">→</span>
                 <img src={arbitrumLogo} alt="" className="h-5 w-5 rounded-sm" />
               </div>
 
-              {/* Progress dots */}
               <div className="mt-4 flex gap-2">
                 {["connecting", "minting", "confirming"].map((p) => (
                   <div
