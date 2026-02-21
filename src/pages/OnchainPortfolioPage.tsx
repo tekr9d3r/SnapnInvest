@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Camera, TrendingUp, Wallet, X, Loader2 } from "lucide-react";
+import { Camera, TrendingUp, Wallet, X, Loader2, ExternalLink, Coins } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StockLogo } from "@/components/StockLogo";
 import { useWallet } from "@/contexts/WalletContext";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllTokenBalances, TokenBalance, STOCK_TOKENS } from "@/lib/tokens";
 
 interface DbHolding {
   id: string;
@@ -25,16 +26,31 @@ const OnchainPortfolioPage = () => {
   const navigate = useNavigate();
   const { address, shortAddress, balance, isAuthenticated, connect, isConnecting } = useWallet();
   const [holdings, setHoldings] = useState<DbHolding[]>([]);
+  const [tokenBalances, setTokenBalances] = useState<TokenBalance[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tokensLoading, setTokensLoading] = useState(true);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
       setLoading(false);
+      setTokensLoading(false);
       return;
     }
     fetchHoldings();
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!address) {
+      setTokensLoading(false);
+      return;
+    }
+    setTokensLoading(true);
+    fetchAllTokenBalances(address).then((balances) => {
+      setTokenBalances(balances);
+      setTokensLoading(false);
+    });
+  }, [address]);
 
   const fetchHoldings = async () => {
     setLoading(true);
@@ -85,6 +101,9 @@ const OnchainPortfolioPage = () => {
   const totalInvested = summaries.reduce((sum, s) => sum + s.invested, 0);
   const totalValue = summaries.reduce((sum, s) => sum + s.shares * s.priceAtPurchase, 0);
 
+  const tokensWithBalance = tokenBalances.filter((t) => t.balance > 0);
+  const tokensWithZero = tokenBalances.filter((t) => t.balance === 0);
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-background px-6 pb-24 pt-6">
@@ -102,7 +121,7 @@ const OnchainPortfolioPage = () => {
           </div>
           <h2 className="font-display text-xl font-bold text-foreground">Connect your wallet</h2>
           <p className="mt-2 max-w-xs text-sm text-muted-foreground">
-            Connect MetaMask to view your onchain portfolio and snapped stock holdings.
+            Connect your wallet to view your onchain portfolio and stock token holdings.
           </p>
           <Button onClick={connect} disabled={isConnecting} className="mt-6 gap-2 rounded-xl">
             {isConnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />}
@@ -153,7 +172,7 @@ const OnchainPortfolioPage = () => {
         </div>
       </div>
 
-      {/* Wallet Assets */}
+      {/* Wallet Balance */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -166,6 +185,85 @@ const OnchainPortfolioPage = () => {
         </div>
         <p className="mt-1 text-xs text-muted-foreground">Robinhood Chain Testnet</p>
       </motion.div>
+
+      {/* Live Token Balances */}
+      <div className="mb-3 flex items-center gap-2">
+        <h2 className="font-display text-lg font-bold text-foreground">Stock Tokens</h2>
+        <Badge variant="outline" className="text-[10px] text-primary border-primary">Live</Badge>
+      </div>
+
+      {tokensLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+          <span className="ml-2 text-sm text-muted-foreground">Fetching on-chain balances…</span>
+        </div>
+      ) : (
+        <div className="mb-6 space-y-2">
+          {tokensWithBalance.length > 0 && tokensWithBalance.map((token, i) => (
+            <motion.div
+              key={token.ticker}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              className="flex items-center justify-between rounded-2xl border border-border bg-card p-4"
+            >
+              <div className="flex items-center gap-3">
+                <StockLogo ticker={token.ticker} size="sm" />
+                <div>
+                  <p className="font-semibold text-foreground">{token.ticker}</p>
+                  <p className="text-xs text-muted-foreground">{token.name}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="font-semibold text-foreground font-mono">
+                  {token.balance.toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                </p>
+                <a
+                  href={`https://explorer.testnet.chain.robinhood.com/address/${token.contract}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline"
+                >
+                  Contract <ExternalLink className="h-2.5 w-2.5" />
+                </a>
+              </div>
+            </motion.div>
+          ))}
+
+          {tokensWithZero.length > 0 && (
+            <div className="space-y-2">
+              {tokensWithZero.map((token, i) => (
+                <motion.div
+                  key={token.ticker}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: (tokensWithBalance.length + i) * 0.05 }}
+                  className="flex items-center justify-between rounded-2xl border border-border bg-card/50 p-4 opacity-60"
+                >
+                  <div className="flex items-center gap-3">
+                    <StockLogo ticker={token.ticker} size="sm" />
+                    <div>
+                      <p className="font-semibold text-foreground">{token.ticker}</p>
+                      <p className="text-xs text-muted-foreground">{token.name}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-muted-foreground font-mono">0</p>
+                    <a
+                      href={`https://explorer.testnet.chain.robinhood.com/address/${token.contract}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary hover:underline"
+                    >
+                      Contract <ExternalLink className="h-2.5 w-2.5" />
+                    </a>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Snapped Stocks */}
       <div className="mb-3 flex items-center gap-2">
@@ -194,7 +292,6 @@ const OnchainPortfolioPage = () => {
         </motion.div>
       ) : (
         <>
-          {/* Summary */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -211,7 +308,6 @@ const OnchainPortfolioPage = () => {
             </div>
           </motion.div>
 
-          {/* Holdings list */}
           <div className="space-y-3">
             {summaries.map((s, i) => (
               <motion.div
