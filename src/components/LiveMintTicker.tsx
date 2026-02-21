@@ -75,17 +75,17 @@ export function LiveMintTicker() {
   const current = mints[activeIndex];
 
   return (
-    <div className="mx-auto mt-8 w-full max-w-sm overflow-hidden rounded-2xl border border-border bg-secondary/40 backdrop-blur-sm">
-      <div className="flex items-center gap-2 px-4 py-1.5 border-b border-border/50">
-      <span className="relative flex h-2 w-2">
+    <div className="mx-auto mt-8 w-full max-w-md overflow-hidden rounded-2xl border border-border bg-secondary/40 backdrop-blur-sm">
+      <div className="flex items-center gap-2 px-5 py-2 border-b border-border/50">
+        <span className="relative flex h-2.5 w-2.5">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary" />
         </span>
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Live Mints
         </span>
       </div>
-      <div className="relative h-20 px-4">
+      <div className="relative h-28 px-5">
         <AnimatePresence mode="wait">
           <motion.div
             key={current.id + activeIndex}
@@ -93,32 +93,36 @@ export function LiveMintTicker() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -16 }}
             transition={{ duration: 0.4, ease: "easeInOut" }}
-            className="absolute inset-x-4 flex items-center gap-2 py-2.5"
+            className="absolute inset-x-5 flex items-center gap-4 py-3"
           >
             {current.captured_image_url ? (
               <img
                 src={current.captured_image_url}
                 alt={current.ticker}
-                className="h-14 w-14 shrink-0 rounded-lg object-cover border border-border shadow-sm"
+                className="h-20 w-20 shrink-0 rounded-xl object-cover border border-border shadow-md"
               />
             ) : (
-              <Zap className="h-3.5 w-3.5 shrink-0 text-primary" />
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl border border-border bg-secondary">
+                <Zap className="h-6 w-6 text-primary" />
+              </div>
             )}
-            <span className="truncate text-sm text-foreground">
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
               <span className="font-mono text-xs text-muted-foreground">
                 {shortenAddress(current.wallet || "")}
               </span>
-              {" minted "}
-              <span className="font-semibold text-primary">
-                ${current.ticker}
+              <span className="truncate text-sm font-medium text-foreground">
+                minted{" "}
+                <span className="font-semibold text-primary">
+                  ${current.ticker}
+                </span>
               </span>
               {current.amount_invested && (
-                <span className="text-muted-foreground">
-                  {" · $"}{Number(current.amount_invested).toFixed(0)}
+                <span className="text-xs text-muted-foreground">
+                  ${Number(current.amount_invested).toFixed(0)} invested
                 </span>
               )}
-            </span>
-            <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
+            </div>
+            <span className="shrink-0 text-[10px] text-muted-foreground">
               {timeAgo(current.created_at)}
             </span>
           </motion.div>
