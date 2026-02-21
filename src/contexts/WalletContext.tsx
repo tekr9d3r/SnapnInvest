@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAccount, useDisconnect } from "wagmi";
+import { useAccount, useDisconnect, useSignMessage } from "wagmi";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { useAppMode } from "./AppModeContext";
 import { toast } from "@/hooks/use-toast";
@@ -33,6 +33,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const { address: wagmiAddress, isConnected } = useAccount();
   const { openConnectModal } = useConnectModal();
   const { disconnect: wagmiDisconnect } = useDisconnect();
+  const { signMessageAsync } = useSignMessage();
 
   const [balance, setBalance] = useState("0");
   const [isConnecting, setIsConnecting] = useState(false);
@@ -42,14 +43,17 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   // Check existing Supabase session on mount
   useEffect(() => {
+    let isMounted = true;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!isMounted) return;
       if (session?.user) {
         setIsAuthenticated(true);
         setUserId(session.user.id);
         const walletAddr = session.user.user_metadata?.wallet_address;
         if (walletAddr) {
           setAuthedAddress(walletAddr);
-          getBalance(walletAddr).then(setBalance);
+          getBalance(walletAddr).then(b => isMounted && setBalance(b));
         }
       } else {
         setIsAuthenticated(false);
@@ -59,28 +63,32 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!isMounted) return;
       if (session?.user) {
         setIsAuthenticated(true);
         setUserId(session.user.id);
         const walletAddr = session.user.user_metadata?.wallet_address;
         if (walletAddr) {
           setAuthedAddress(walletAddr);
-          getBalance(walletAddr).then(setBalance);
+          getBalance(walletAddr).then(b => isMounted && setBalance(b));
         }
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  // When wagmi connects, authenticate without signature
+  // When wagmi connects and we're not yet authenticated, run auth flow
   useEffect(() => {
     if (isConnected && wagmiAddress && !isAuthenticated && !isConnecting) {
       authenticateWallet(wagmiAddress);
     }
   }, [isConnected, wagmiAddress, isAuthenticated, isConnecting]);
 
-  // Refresh balance when address changes
+  // Refresh balance
   useEffect(() => {
     const addr = authedAddress || (isConnected ? wagmiAddress : null);
     if (addr) {
@@ -91,6 +99,21 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const authenticateWallet = useCallback(async (addr: string) => {
     setIsConnecting(true);
     try {
+      // Sign message for verification
+      const message = `Sign in to Snap'n'Buy\n\nWallet: ${addr}\nTimestamp: ${Date.now()}`;
+
+      let signature: string;
+      try {
+        signature = await signMessageAsync({ message, account: addr as `0x${string}` });
+      } catch (sigErr) {
+        console.error("Signature rejected:", sigErr);
+        toast({ title: "Signature rejected", description: "You need to sign the message to authenticate.", variant: "destructive" });
+        wagmiDisconnect();
+        setIsConnecting(false);
+        return;
+      }
+
+      // Call backend
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
@@ -100,7 +123,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           "Content-Type": "application/json",
           "apikey": supabaseKey,
         },
-        body: JSON.stringify({ address: addr }),
+        body: JSON.stringify({ address: addr, signature, message }),
       });
 
       const data = await response.json();
@@ -130,7 +153,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsConnecting(false);
     }
-  }, [wagmiDisconnect]);
+  }, [signMessageAsync, wagmiDisconnect]);
 
   const connect = useCallback(() => {
     if (openConnectModal) {
