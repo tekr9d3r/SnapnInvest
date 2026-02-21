@@ -8,11 +8,10 @@ import { Stock } from "@/lib/types";
 import { generateTxHash } from "@/lib/wallet";
 import { addHolding } from "@/lib/portfolio";
 import { compressImage } from "@/lib/imageUtils";
-import { useAppMode } from "@/contexts/AppModeContext";
 import { useWallet } from "@/contexts/WalletContext";
 import { supabase } from "@/integrations/supabase/client";
-import arbitrumLogo from "@/assets/arbitrum-logo.png";
 import robinhoodLogo from "@/assets/robinhood-logo.png";
+import arbitrumLogo from "@/assets/arbitrum-logo.png";
 
 type Phase = "confirm" | "connecting" | "minting" | "confirming" | "success";
 
@@ -31,7 +30,6 @@ const ConfirmPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { stock, amount, image } = (location.state as { stock: Stock; amount: number; image: string }) || {};
-  const { mode } = useAppMode();
   const { isAuthenticated, userId } = useWallet();
 
   const [phase, setPhase] = useState<Phase>("confirm");
@@ -54,8 +52,8 @@ const ConfirmPage = () => {
     const hash = generateTxHash();
     setTxHash(hash);
 
-    if (mode === "onchain" && isAuthenticated && userId) {
-      // Upload image to storage and save holding to database
+    if (isAuthenticated && userId) {
+      // Wallet connected: upload image and save to database
       let capturedImageUrl: string | undefined;
       if (image) {
         try {
@@ -88,7 +86,7 @@ const ConfirmPage = () => {
         tx_hash: hash,
       } as any);
     } else {
-      // Demo mode: save to localStorage
+      // No wallet: save to localStorage
       let compressedImage: string | undefined;
       if (image) {
         try {
@@ -176,6 +174,12 @@ const ConfirmPage = () => {
                     <span className="text-muted-foreground">Gas fee</span>
                     <span className="text-foreground">~$0.01 ETH</span>
                   </div>
+                  {!isAuthenticated && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Mode</span>
+                      <span className="text-muted-foreground">Local only (connect wallet to save)</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -197,7 +201,7 @@ const ConfirmPage = () => {
                 Buy ${amount} of {stock.ticker}
               </Button>
               <p className="mt-3 text-center text-xs text-muted-foreground">
-                {mode === "onchain" ? "Simulated minting · No real on-chain transaction" : "Demo · No real money involved"}
+                {isAuthenticated ? "Simulated minting · No real on-chain transaction" : "Demo · No real money involved"}
               </p>
             </motion.div>
           )}
