@@ -6,47 +6,21 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Minimal EIP-191 signature recovery using Web Crypto
-// We use ethers only for verifyMessage
-import { ethers } from "https://esm.sh/ethers@6.16.0";
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { address, signature, message } = await req.json();
+    const { address } = await req.json();
     console.log("wallet-auth called for address:", address);
 
-    if (!address || !signature || !message) {
+    if (!address) {
       return new Response(
-        JSON.stringify({ error: "Missing address, signature, or message" }),
+        JSON.stringify({ error: "Missing address" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    // Verify the signature
-    let recoveredAddress: string;
-    try {
-      recoveredAddress = ethers.verifyMessage(message, signature);
-    } catch (verifyErr) {
-      console.error("Signature verification failed:", verifyErr);
-      return new Response(
-        JSON.stringify({ error: "Invalid signature format" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    if (recoveredAddress.toLowerCase() !== address.toLowerCase()) {
-      console.error("Address mismatch:", recoveredAddress, "vs", address);
-      return new Response(
-        JSON.stringify({ error: "Signature does not match address" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    console.log("Signature verified for:", address);
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -56,7 +30,7 @@ Deno.serve(async (req) => {
     const walletLower = address.toLowerCase();
     const fakeEmail = `${walletLower}@wallet.snapnbuy`;
 
-    // Check if user exists by looking up profile
+    // Check if user exists
     const { data: existingProfile } = await supabaseAdmin
       .from("profiles")
       .select("id")
@@ -64,8 +38,6 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     let userId: string;
-
-    // Deterministic password derived from wallet + service role key suffix
     const tempPassword = `wallet_${walletLower}_${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!.slice(-12)}`;
 
     if (existingProfile) {
@@ -87,15 +59,11 @@ Deno.serve(async (req) => {
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-
       userId = newUser.user.id;
-      console.log("User created:", userId);
     }
 
-    // Ensure password is set (for returning users too)
     await supabaseAdmin.auth.admin.updateUser(userId, { password: tempPassword });
 
-    // Sign in to get session tokens
     const anonClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!
