@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { StockLogo } from "@/components/StockLogo";
 import { formatDistanceToNow } from "date-fns";
-import { Loader2, ExternalLink } from "lucide-react";
-import { createPublicClient, http } from "viem";
-import { mainnet } from "viem/chains";
+import { Loader2, ExternalLink, X } from "lucide-react";
+import { useWallet } from "@/contexts/WalletContext";
+import { toast } from "@/hooks/use-toast";
+import { JsonRpcProvider } from "ethers";
 
 interface FeedItem {
   id: string;
@@ -17,6 +18,7 @@ interface FeedItem {
   captured_image_url: string | null;
   tx_hash: string | null;
   created_at: string;
+  user_id: string;
   wallet_address: string | null;
 }
 
@@ -24,18 +26,17 @@ function shortenAddress(addr: string) {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
 }
 
-const ethClient = createPublicClient({
-  chain: mainnet,
-  transport: http("https://eth.llamarpc.com"),
-});
+const ethProvider = new JsonRpcProvider("https://eth.llamarpc.com");
 
 async function resolveENSBatch(addresses: string[]): Promise<Map<string, string>> {
   const map = new Map<string, string>();
   const unique = [...new Set(addresses.filter(Boolean))];
-  const results = await Promise.allSettled(
+  await Promise.allSettled(
     unique.map(async (addr) => {
-      const name = await ethClient.getEnsName({ address: addr as `0x${string}` });
-      if (name) map.set(addr.toLowerCase(), name);
+      try {
+        const name = await ethProvider.lookupAddress(addr);
+        if (name) map.set(addr.toLowerCase(), name);
+      } catch {}
     })
   );
   return map;
@@ -45,6 +46,7 @@ export default function FeedPage() {
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [ensNames, setEnsNames] = useState<Map<string, string>>(new Map());
+  const { userId } = useWallet();
 
   useEffect(() => {
     async function load() {
@@ -78,7 +80,6 @@ export default function FeedPage() {
       setItems(feedItems);
       setLoading(false);
 
-      // Resolve ENS names in the background
       const walletAddrs = feedItems
         .map((i) => i.wallet_address)
         .filter(Boolean) as string[];
@@ -88,6 +89,16 @@ export default function FeedPage() {
     }
     load();
   }, []);
+
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase.from("holdings").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Failed to delete", description: error.message, variant: "destructive" });
+      return;
+    }
+    setItems((prev) => prev.filter((i) => i.id !== id));
+    toast({ title: "Snap removed from feed" });
+  };
 
   return (
     <main className="min-h-screen bg-background pb-24 pt-16">
@@ -107,9 +118,19 @@ export default function FeedPage() {
             {items.map((item) => (
               <article
                 key={item.id}
-                className="flex gap-3 rounded-xl border border-border bg-card p-3"
+                className="relative flex gap-3 rounded-xl border border-border bg-card p-3"
               >
-                {/* Captured image thumbnail */}
+                {/* Delete button for own snaps */}
+                {userId && item.user_id === userId && (
+                  <button
+                    onClick={() => handleDelete(item.id)}
+                    className="absolute top-2 right-2 rounded-full p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                    aria-label="Remove snap"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+
                 {item.captured_image_url ? (
                   <img
                     src={item.captured_image_url}
@@ -122,7 +143,6 @@ export default function FeedPage() {
                   </div>
                 )}
 
-                {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <StockLogo ticker={item.ticker} logoUrl={item.logo_url || undefined} size="sm" className="h-5 w-5" />
