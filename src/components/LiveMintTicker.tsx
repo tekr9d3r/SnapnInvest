@@ -10,6 +10,7 @@ interface MintEntry {
   amount_invested: number | null;
   created_at: string;
   user_id: string;
+  captured_image_url: string | null;
 }
 
 function shortenAddress(addr: string) {
@@ -34,7 +35,7 @@ export function LiveMintTicker() {
     const fetchMints = async () => {
       const { data } = await supabase
         .from("holdings")
-        .select("id, ticker, name, amount_invested, created_at, user_id")
+        .select("id, ticker, name, amount_invested, created_at, user_id, captured_image_url")
         .order("created_at", { ascending: false })
         .limit(5);
 
@@ -94,7 +95,15 @@ export function LiveMintTicker() {
             transition={{ duration: 0.4, ease: "easeInOut" }}
             className="absolute inset-x-4 flex items-center gap-2 py-2.5"
           >
-            <Zap className="h-3.5 w-3.5 shrink-0 text-primary" />
+            {current.captured_image_url ? (
+              <img
+                src={current.captured_image_url}
+                alt={current.ticker}
+                className="h-7 w-7 shrink-0 rounded-md object-cover border border-border"
+              />
+            ) : (
+              <Zap className="h-3.5 w-3.5 shrink-0 text-primary" />
+            )}
             <span className="truncate text-sm text-foreground">
               <span className="font-mono text-xs text-muted-foreground">
                 {shortenAddress(current.wallet || "")}
