@@ -81,7 +81,7 @@ const CameraPage = () => {
           <X className="h-6 w-6" />
         </Button>
         <span className="font-display text-sm font-semibold text-foreground">
-          Snap<span className="text-primary">'n</span>Buy
+          Snap<span className="text-primary">'n</span>Invest
         </span>
         <div className="w-10" />
       </div>

@@ -10,7 +10,7 @@ export function TopBar() {
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
       <div className="mx-auto flex max-w-md items-center justify-between px-4 py-2.5">
         <span className="font-display text-sm font-bold text-foreground">
-          Snap<span className="text-primary">'n</span>Buy
+          Snap<span className="text-primary">'n</span>Invest
         </span>
         <ConnectButton
           chainStatus="icon"
