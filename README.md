@@ -22,6 +22,12 @@ Snap'nInvest is a mobile-first dApp that lets users take photos of real-world pr
 | **Blockchain** | Robinhood Chain Testnet, ethers.js |
 | **State** | TanStack React Query |
 ---
+## ⚠️ Testnet Limitations
+- **Token minting is simulated** — Due to Robinhood Chain testnet limitations, the stock token minting process is not yet executing on-chain transactions. The mint animation is a demo mockup.
+- **On-chain data** — Only the wallet's testnet ETH balance and the 5 available stock token balances (TSLA, AMZN, NFLX, PLTR, AMD) are read live from the Robinhood Chain.
+- **Portfolio holdings** — Investment records (snapped stocks, amounts, shares) are stored in the backend database, not on-chain.
+- **Future plans** — Once Robinhood Chain mainnet or testnet smart contract deployment is available, actual ERC-20 token minting will replace the simulation.
+---
 ## 📱 Pages & Routes
 | Route | Description |
 |-------|-------------|
