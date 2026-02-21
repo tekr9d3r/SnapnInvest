@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAccount, useDisconnect, useSignMessage } from "wagmi";
+import { useAccount, useDisconnect } from "wagmi";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { useAppMode } from "./AppModeContext";
 import { toast } from "@/hooks/use-toast";
@@ -33,7 +33,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const { address: wagmiAddress, isConnected } = useAccount();
   const { openConnectModal } = useConnectModal();
   const { disconnect: wagmiDisconnect } = useDisconnect();
-  const { signMessageAsync } = useSignMessage();
 
   const [balance, setBalance] = useState("0");
   const [isConnecting, setIsConnecting] = useState(false);
@@ -74,7 +73,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  // When wagmi connects and we're not yet authenticated, run auth flow
+  // When wagmi connects, authenticate without signature
   useEffect(() => {
     if (isConnected && wagmiAddress && !isAuthenticated && !isConnecting) {
       authenticateWallet(wagmiAddress);
@@ -92,19 +91,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const authenticateWallet = useCallback(async (addr: string) => {
     setIsConnecting(true);
     try {
-      const message = `Sign in to Snap'n'Buy\n\nWallet: ${addr}\nTimestamp: ${Date.now()}`;
-      
-      let signature: string;
-      try {
-        signature = await signMessageAsync({ message, account: addr as `0x${string}` });
-      } catch (sigErr) {
-        console.error("User rejected signature:", sigErr);
-        toast({ title: "Signature rejected", description: "You need to sign the message to authenticate.", variant: "destructive" });
-        wagmiDisconnect();
-        setIsConnecting(false);
-        return;
-      }
-
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
@@ -114,7 +100,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           "Content-Type": "application/json",
           "apikey": supabaseKey,
         },
-        body: JSON.stringify({ address: addr, signature, message }),
+        body: JSON.stringify({ address: addr }),
       });
 
       const data = await response.json();
@@ -144,7 +130,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsConnecting(false);
     }
-  }, [signMessageAsync, wagmiDisconnect]);
+  }, [wagmiDisconnect]);
 
   const connect = useCallback(() => {
     if (openConnectModal) {
