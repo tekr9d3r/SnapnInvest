@@ -27,6 +27,16 @@ const Index = () => {
           <img src={robinhoodLogo} alt="Robinhood" className="h-5 w-5 rounded-sm object-contain" />
           <span className="text-xs font-semibold text-foreground">Built on Robinhood Chain</span>
         </div>
+        {/* CTA */}
+        <Button
+          size="lg"
+          onClick={() => navigate("/camera")}
+          className="mt-5 group h-14 gap-3 rounded-2xl px-8 text-lg font-semibold animate-pulse-glow"
+        >
+          <Camera className="h-5 w-5" />
+          Open Camera
+          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+        </Button>
         <p className="mx-auto mt-4 max-w-sm text-base text-muted-foreground">
           Point your camera at any product, let AI recognize the brand, and buy tokenized stocks on <span className="font-semibold text-foreground">Robinhood Chain</span>.
         </p>
@@ -40,24 +50,6 @@ const Index = () => {
         className="w-full flex justify-center"
       >
         <LiveMintTicker />
-      </motion.div>
-
-      {/* CTA */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, delay: 0.4 }}
-        className="mt-10 flex flex-col items-center gap-3"
-      >
-        <Button
-          size="lg"
-          onClick={() => navigate("/camera")}
-          className="group h-14 gap-3 rounded-2xl px-8 text-lg font-semibold animate-pulse-glow"
-        >
-          <Camera className="h-5 w-5" />
-          Open Camera
-          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-        </Button>
       </motion.div>
     </div>
   );
