@@ -17,7 +17,7 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const privyAppId = import.meta.env.VITE_PRIVY_APP_ID || "";
+const privyAppId = "cmlvmgiov00w30bjxom0snwdw";
 
 const App = () => (
   <PrivyProvider
