@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { StockLogo } from "@/components/StockLogo";
 import { formatDistanceToNow } from "date-fns";
 import { Loader2, ExternalLink } from "lucide-react";
+import { createPublicClient, http } from "viem";
+import { mainnet } from "viem/chains";
 
 interface FeedItem {
   id: string;
@@ -22,9 +24,27 @@ function shortenAddress(addr: string) {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
 }
 
+const ethClient = createPublicClient({
+  chain: mainnet,
+  transport: http("https://eth.llamarpc.com"),
+});
+
+async function resolveENSBatch(addresses: string[]): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  const unique = [...new Set(addresses.filter(Boolean))];
+  const results = await Promise.allSettled(
+    unique.map(async (addr) => {
+      const name = await ethClient.getEnsName({ address: addr as `0x${string}` });
+      if (name) map.set(addr.toLowerCase(), name);
+    })
+  );
+  return map;
+}
+
 export default function FeedPage() {
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [ensNames, setEnsNames] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     async function load() {
@@ -40,7 +60,6 @@ export default function FeedPage() {
         return;
       }
 
-      // Fetch wallet addresses for all unique user_ids
       const userIds = [...new Set((data || []).map((d) => d.user_id))];
       const { data: profiles } = await supabase
         .from("profiles")
@@ -51,13 +70,21 @@ export default function FeedPage() {
         (profiles || []).map((p) => [p.id, p.wallet_address])
       );
 
-      setItems(
-        (data || []).map((d) => ({
-          ...d,
-          wallet_address: addrMap.get(d.user_id) || null,
-        }))
-      );
+      const feedItems = (data || []).map((d) => ({
+        ...d,
+        wallet_address: addrMap.get(d.user_id) || null,
+      }));
+
+      setItems(feedItems);
       setLoading(false);
+
+      // Resolve ENS names in the background
+      const walletAddrs = feedItems
+        .map((i) => i.wallet_address)
+        .filter(Boolean) as string[];
+      if (walletAddrs.length > 0) {
+        resolveENSBatch(walletAddrs).then(setEnsNames);
+      }
     }
     load();
   }, []);
@@ -112,7 +139,7 @@ export default function FeedPage() {
                   <div className="mt-1.5 flex items-center justify-between">
                     <span className="text-[11px] font-mono text-muted-foreground">
                       {item.wallet_address
-                        ? shortenAddress(item.wallet_address)
+                        ? ensNames.get(item.wallet_address.toLowerCase()) || shortenAddress(item.wallet_address)
                         : "—"}
                     </span>
                     <span className="text-[11px] text-muted-foreground">
