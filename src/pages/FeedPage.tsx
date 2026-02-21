@@ -135,7 +135,7 @@ export default function FeedPage() {
                   <img
                     src={item.captured_image_url}
                     alt={`${item.ticker} snap`}
-                    className="w-full rounded-lg object-cover mb-3"
+                    className="w-full max-h-48 rounded-lg object-cover mb-3"
                   />
                 )}
 
