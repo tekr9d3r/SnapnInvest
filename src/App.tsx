@@ -14,6 +14,7 @@ import ConfirmPage from "./pages/ConfirmPage";
 import PortfolioPage from "./pages/PortfolioPage";
 import FeedPage from "./pages/FeedPage";
 import NotFound from "./pages/NotFound";
+import ReadmePage from "./pages/ReadmePage";
 
 const queryClient = new QueryClient();
 
@@ -71,6 +72,7 @@ const App = () => (
               <Route path="/confirm" element={<ConfirmPage />} />
               <Route path="/portfolio" element={<PortfolioPage />} />
               <Route path="/feed" element={<FeedPage />} />
+              <Route path="/readme" element={<ReadmePage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <TopBar />
