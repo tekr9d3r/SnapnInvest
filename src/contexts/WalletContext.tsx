@@ -38,6 +38,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [authedAddress, setAuthedAddress] = useState<string | null>(null);
+  const [sessionChecked, setSessionChecked] = useState(false);
 
   // Check existing Supabase session on mount
   useEffect(() => {
@@ -71,6 +72,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           getBalance(walletAddr).then(b => isMounted && setBalance(b));
         }
       }
+      setSessionChecked(true);
     });
 
     return () => {
@@ -80,11 +82,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // When wagmi connects and we're not yet authenticated, run auth flow
+  // Only after initial session check is done to avoid re-prompting on refresh
   useEffect(() => {
-    if (isConnected && wagmiAddress && !isAuthenticated && !isConnecting) {
+    if (sessionChecked && isConnected && wagmiAddress && !isAuthenticated && !isConnecting) {
       authenticateWallet(wagmiAddress);
     }
-  }, [isConnected, wagmiAddress, isAuthenticated, isConnecting]);
+  }, [sessionChecked, isConnected, wagmiAddress, isAuthenticated, isConnecting]);
 
   // Refresh balance
   useEffect(() => {
