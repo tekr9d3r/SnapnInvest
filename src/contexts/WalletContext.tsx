@@ -1,8 +1,10 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { connectWallet as connectMetaMask, getBalance, shortenAddress } from "@/lib/wallet";
+import { useAccount, useDisconnect, useSignMessage } from "wagmi";
+import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { useAppMode } from "./AppModeContext";
 import { toast } from "@/hooks/use-toast";
+import { getBalance, shortenAddress } from "@/lib/wallet";
 
 interface WalletContextValue {
   address: string | null;
@@ -11,7 +13,7 @@ interface WalletContextValue {
   isConnecting: boolean;
   isAuthenticated: boolean;
   userId: string | null;
-  connect: () => Promise<void>;
+  connect: () => void;
   disconnect: () => void;
 }
 
@@ -22,33 +24,38 @@ const WalletContext = createContext<WalletContextValue>({
   isConnecting: false,
   isAuthenticated: false,
   userId: null,
-  connect: async () => {},
+  connect: () => {},
   disconnect: () => {},
 });
 
-
 export function WalletProvider({ children }: { children: ReactNode }) {
   const { mode } = useAppMode();
-  const [address, setAddress] = useState<string | null>(null);
+  const { address: wagmiAddress, isConnected } = useAccount();
+  const { openConnectModal } = useConnectModal();
+  const { disconnect: wagmiDisconnect } = useDisconnect();
+  const { signMessageAsync } = useSignMessage();
+
   const [balance, setBalance] = useState("0");
   const [isConnecting, setIsConnecting] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [authedAddress, setAuthedAddress] = useState<string | null>(null);
 
-  // Check existing session on mount
+  // Check existing Supabase session on mount
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         setIsAuthenticated(true);
         setUserId(session.user.id);
         const walletAddr = session.user.user_metadata?.wallet_address;
         if (walletAddr) {
-          setAddress(walletAddr);
+          setAuthedAddress(walletAddr);
           getBalance(walletAddr).then(setBalance);
         }
       } else {
         setIsAuthenticated(false);
         setUserId(null);
+        setAuthedAddress(null);
       }
     });
 
@@ -58,7 +65,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         setUserId(session.user.id);
         const walletAddr = session.user.user_metadata?.wallet_address;
         if (walletAddr) {
-          setAddress(walletAddr);
+          setAuthedAddress(walletAddr);
           getBalance(walletAddr).then(setBalance);
         }
       }
@@ -67,63 +74,40 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Listen for account changes in MetaMask
+  // When wagmi connects and we're not yet authenticated, run auth flow
   useEffect(() => {
-    if (!window.ethereum) return;
-    const handler = (...args: unknown[]) => {
-      const accounts = args[0] as string[];
-      if (accounts.length === 0) {
-        disconnect();
-      }
-    };
-    window.ethereum.on("accountsChanged", handler);
-    return () => window.ethereum?.removeListener("accountsChanged", handler);
-  }, []);
+    if (isConnected && wagmiAddress && !isAuthenticated && !isConnecting) {
+      authenticateWallet(wagmiAddress);
+    }
+  }, [isConnected, wagmiAddress, isAuthenticated, isConnecting]);
 
   // Refresh balance when address changes
   useEffect(() => {
-    if (address) {
-      getBalance(address).then(setBalance);
+    const addr = authedAddress || (isConnected ? wagmiAddress : null);
+    if (addr) {
+      getBalance(addr).then(setBalance);
     }
-  }, [address]);
+  }, [authedAddress, wagmiAddress, isConnected]);
 
-  const connect = useCallback(async () => {
-    if (!window.ethereum) {
-      toast({ title: "MetaMask not found", description: "Please install MetaMask to continue.", variant: "destructive" });
-      window.open("https://metamask.io/download/", "_blank");
-      return;
-    }
-
+  const authenticateWallet = useCallback(async (addr: string) => {
     setIsConnecting(true);
     try {
-      // Step 1: Connect wallet
-      const addr = await connectMetaMask();
-      if (!addr) {
-        toast({ title: "Connection cancelled", description: "Wallet connection was rejected.", variant: "destructive" });
-        setIsConnecting(false);
-        return;
-      }
-
-      // Step 2: Request signature for auth
       const message = `Sign in to Snap'n'Buy\n\nWallet: ${addr}\nTimestamp: ${Date.now()}`;
+      
       let signature: string;
       try {
-        signature = await window.ethereum.request({
-          method: "personal_sign",
-          params: [message, addr],
-        }) as string;
+        signature = await signMessageAsync({ message, account: addr as `0x${string}` });
       } catch (sigErr) {
         console.error("User rejected signature:", sigErr);
         toast({ title: "Signature rejected", description: "You need to sign the message to authenticate.", variant: "destructive" });
+        wagmiDisconnect();
         setIsConnecting(false);
         return;
       }
 
-      // Step 3: Authenticate via edge function
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-      console.log("Calling wallet-auth edge function...");
       const response = await fetch(`${supabaseUrl}/functions/v1/wallet-auth`, {
         method: "POST",
         headers: {
@@ -134,48 +118,57 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       });
 
       const data = await response.json();
-      console.log("wallet-auth response:", response.status, data);
 
       if (!response.ok || !data?.access_token) {
         console.error("Wallet auth failed:", data);
         toast({ title: "Authentication failed", description: data?.error || "Could not authenticate wallet.", variant: "destructive" });
+        wagmiDisconnect();
         setIsConnecting(false);
         return;
       }
 
-      // Step 4: Set session
       await supabase.auth.setSession({
         access_token: data.access_token,
         refresh_token: data.refresh_token,
       });
 
-      setAddress(addr.toLowerCase());
+      setAuthedAddress(addr.toLowerCase());
       const bal = await getBalance(addr);
       setBalance(bal);
 
       toast({ title: "Wallet connected!", description: `Connected as ${shortenAddress(addr)}` });
     } catch (err) {
-      console.error("Wallet connection failed:", err);
+      console.error("Wallet auth error:", err);
       toast({ title: "Connection failed", description: String(err), variant: "destructive" });
+      wagmiDisconnect();
     } finally {
       setIsConnecting(false);
     }
-  }, []);
+  }, [signMessageAsync, wagmiDisconnect]);
+
+  const connect = useCallback(() => {
+    if (openConnectModal) {
+      openConnectModal();
+    }
+  }, [openConnectModal]);
 
   const disconnect = useCallback(() => {
+    wagmiDisconnect();
     supabase.auth.signOut();
-    setAddress(null);
+    setAuthedAddress(null);
     setBalance("0");
     setIsAuthenticated(false);
     setUserId(null);
     toast({ title: "Wallet disconnected" });
-  }, []);
+  }, [wagmiDisconnect]);
+
+  const displayAddress = authedAddress || (isConnected ? wagmiAddress?.toLowerCase() ?? null : null);
 
   return (
     <WalletContext.Provider
       value={{
-        address,
-        shortAddress: address ? shortenAddress(address) : "",
+        address: displayAddress,
+        shortAddress: displayAddress ? shortenAddress(displayAddress) : "",
         balance,
         isConnecting,
         isAuthenticated,

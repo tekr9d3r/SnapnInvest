@@ -1,8 +1,8 @@
 import { useNavigate } from "react-router-dom";
-import { Camera, ArrowRight, Wallet, Loader2 } from "lucide-react";
+import { Camera, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAppMode } from "@/contexts/AppModeContext";
 import { useWallet } from "@/contexts/WalletContext";
 
@@ -12,7 +12,7 @@ import arbitrumLogo from "@/assets/arbitrum-logo.png";
 const Index = () => {
   const navigate = useNavigate();
   const { mode } = useAppMode();
-  const { isAuthenticated, shortAddress, connect, isConnecting } = useWallet();
+  const { isAuthenticated } = useWallet();
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-background px-6 pb-24 pt-16">
@@ -62,15 +62,7 @@ const Index = () => {
         className="mt-10 flex flex-col items-center gap-3"
       >
         {mode === "onchain" && !isAuthenticated ? (
-          <Button
-            size="lg"
-            onClick={connect}
-            disabled={isConnecting}
-            className="group h-14 gap-3 rounded-2xl px-8 text-lg font-semibold animate-pulse-glow"
-          >
-            {isConnecting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Wallet className="h-5 w-5" />}
-            {isConnecting ? "Connecting..." : "Connect Wallet"}
-          </Button>
+          <ConnectButton label="Connect Wallet" />
         ) : (
           <Button
             size="lg"
@@ -81,10 +73,6 @@ const Index = () => {
             Open Camera
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </Button>
-        )}
-
-        {mode === "onchain" && isAuthenticated && (
-          <span className="text-xs text-muted-foreground font-mono">{shortAddress}</span>
         )}
       </motion.div>
 
