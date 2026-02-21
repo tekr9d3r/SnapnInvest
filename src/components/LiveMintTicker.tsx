@@ -85,7 +85,7 @@ export function LiveMintTicker() {
           Live Mints
         </span>
       </div>
-      <div className="relative h-12 px-4">
+      <div className="relative h-20 px-4">
         <AnimatePresence mode="wait">
           <motion.div
             key={current.id + activeIndex}
@@ -99,7 +99,7 @@ export function LiveMintTicker() {
               <img
                 src={current.captured_image_url}
                 alt={current.ticker}
-                className="h-7 w-7 shrink-0 rounded-md object-cover border border-border"
+                className="h-14 w-14 shrink-0 rounded-lg object-cover border border-border shadow-sm"
               />
             ) : (
               <Zap className="h-3.5 w-3.5 shrink-0 text-primary" />
