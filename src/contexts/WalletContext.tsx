@@ -84,9 +84,24 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     if (!sessionChecked || !ready || !authenticated || isAuthenticated || isConnecting) return;
 
     const wallet = wallets.find(w => w.walletClientType !== "privy");
-    if (wallet?.address) {
-      authenticateWallet(wallet.address, wallet);
-    }
+    if (!wallet?.address) return;
+
+    // Double-check Supabase session to avoid re-signing on refresh
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        // Session already exists, just restore state
+        setIsAuthenticated(true);
+        setUserId(session.user.id);
+        const walletAddr = session.user.user_metadata?.wallet_address;
+        if (walletAddr) {
+          setAuthedAddress(walletAddr);
+          getBalance(walletAddr).then(setBalance);
+        }
+      } else {
+        // No session — request signature
+        authenticateWallet(wallet.address, wallet);
+      }
+    });
   }, [sessionChecked, ready, authenticated, wallets, isAuthenticated, isConnecting]);
 
   // Refresh balance
