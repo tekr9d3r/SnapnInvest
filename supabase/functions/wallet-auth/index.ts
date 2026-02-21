@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { ethers } from "https://esm.sh/ethers@6.16.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,15 +13,36 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { address } = await req.json();
+    const { address, signature, message } = await req.json();
     console.log("wallet-auth called for address:", address);
 
-    if (!address) {
+    if (!address || !signature || !message) {
       return new Response(
-        JSON.stringify({ error: "Missing address" }),
+        JSON.stringify({ error: "Missing address, signature, or message" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Verify signature
+    let recoveredAddress: string;
+    try {
+      recoveredAddress = ethers.verifyMessage(message, signature);
+    } catch (verifyErr) {
+      console.error("Signature verification failed:", verifyErr);
+      return new Response(
+        JSON.stringify({ error: "Invalid signature" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (recoveredAddress.toLowerCase() !== address.toLowerCase()) {
+      return new Response(
+        JSON.stringify({ error: "Signature does not match address" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("Signature verified for:", address);
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -29,6 +51,7 @@ Deno.serve(async (req) => {
 
     const walletLower = address.toLowerCase();
     const fakeEmail = `${walletLower}@wallet.snapnbuy`;
+    const tempPassword = `wallet_${walletLower}_${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!.slice(-12)}`;
 
     // Check if user exists
     const { data: existingProfile } = await supabaseAdmin
@@ -38,11 +61,18 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     let userId: string;
-    const tempPassword = `wallet_${walletLower}_${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!.slice(-12)}`;
 
     if (existingProfile) {
       userId = existingProfile.id;
       console.log("Existing user found:", userId);
+
+      // Update password for existing user
+      const { error: updateErr } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+        password: tempPassword,
+      });
+      if (updateErr) {
+        console.error("Failed to update user password:", updateErr);
+      }
     } else {
       console.log("Creating new user for wallet:", walletLower);
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -62,8 +92,7 @@ Deno.serve(async (req) => {
       userId = newUser.user.id;
     }
 
-    await supabaseAdmin.auth.admin.updateUser(userId, { password: tempPassword });
-
+    // Sign in to get session tokens
     const anonClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!

@@ -1,14 +1,3 @@
-declare global {
-  interface Window {
-    ethereum?: {
-      request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-      on: (event: string, handler: (...args: unknown[]) => void) => void;
-      removeListener: (event: string, handler: (...args: unknown[]) => void) => void;
-      isMetaMask?: boolean;
-    };
-  }
-}
-
 export const ROBINHOOD_CHAIN = {
   chainId: "0xB636", // 46630
   chainName: "Robinhood Chain Testnet",
@@ -16,21 +5,6 @@ export const ROBINHOOD_CHAIN = {
   rpcUrls: ["https://rpc.testnet.chain.robinhood.com", "https://sequencer.testnet.chain.robinhood.com"],
   blockExplorerUrls: ["https://explorer.testnet.chain.robinhood.com"],
 };
-
-export async function connectWallet(): Promise<string | null> {
-  if (!window.ethereum) {
-    window.open("https://metamask.io/download/", "_blank");
-    return null;
-  }
-  try {
-    const accounts = (await window.ethereum.request({
-      method: "eth_requestAccounts",
-    })) as string[];
-    return accounts[0] || null;
-  } catch {
-    return null;
-  }
-}
 
 export async function getBalance(address: string): Promise<string> {
   // Always fetch from Robinhood Chain RPC, regardless of wallet's active chain
