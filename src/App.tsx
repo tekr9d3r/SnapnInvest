@@ -2,10 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { WagmiProvider } from "wagmi";
-import { RainbowKitProvider, darkTheme } from "@rainbow-me/rainbowkit";
-import '@rainbow-me/rainbowkit/styles.css';
-import { wagmiConfig } from "@/lib/wagmi";
+import { PrivyProvider } from "@privy-io/react-auth";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { WalletProvider } from "@/contexts/WalletContext";
 import { BottomNav } from "@/components/BottomNav";
@@ -20,32 +17,69 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const privyAppId = import.meta.env.VITE_PRIVY_APP_ID || "";
+
 const App = () => (
-  <WagmiProvider config={wagmiConfig}>
+  <PrivyProvider
+    appId={privyAppId}
+    config={{
+      appearance: {
+        theme: "dark",
+        accentColor: "#00dc82",
+      },
+      loginMethods: ["wallet"],
+      embeddedWallets: {
+        ethereum: {
+          createOnLogin: "off",
+        },
+      },
+      supportedChains: [
+        {
+          id: 46630,
+          name: "Robinhood Chain Testnet",
+          nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+          rpcUrls: {
+            default: { http: ["https://rpc.testnet.chain.robinhood.com"] },
+          },
+          blockExplorers: {
+            default: { name: "Explorer", url: "https://explorer.testnet.chain.robinhood.com" },
+          },
+          testnet: true,
+        },
+      ],
+      defaultChain: {
+        id: 46630,
+        name: "Robinhood Chain Testnet",
+        nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+        rpcUrls: {
+          default: { http: ["https://rpc.testnet.chain.robinhood.com"] },
+        },
+        testnet: true,
+      },
+    }}
+  >
     <QueryClientProvider client={queryClient}>
-      <RainbowKitProvider theme={darkTheme({ accentColor: '#00dc82', accentColorForeground: 'black', borderRadius: 'large' })}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <WalletProvider>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/camera" element={<CameraPage />} />
-                <Route path="/result" element={<ResultPage />} />
-                <Route path="/confirm" element={<ConfirmPage />} />
-                <Route path="/portfolio" element={<PortfolioPage />} />
-                <Route path="/feed" element={<FeedPage />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-              <TopBar />
-              <BottomNav />
-            </WalletProvider>
-          </BrowserRouter>
-        </TooltipProvider>
-      </RainbowKitProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <WalletProvider>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/camera" element={<CameraPage />} />
+              <Route path="/result" element={<ResultPage />} />
+              <Route path="/confirm" element={<ConfirmPage />} />
+              <Route path="/portfolio" element={<PortfolioPage />} />
+              <Route path="/feed" element={<FeedPage />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <TopBar />
+            <BottomNav />
+          </WalletProvider>
+        </BrowserRouter>
+      </TooltipProvider>
     </QueryClientProvider>
-  </WagmiProvider>
+  </PrivyProvider>
 );
 
 export default App;

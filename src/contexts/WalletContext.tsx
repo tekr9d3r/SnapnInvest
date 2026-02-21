@@ -1,9 +1,9 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAccount, useDisconnect, useSignMessage } from "wagmi";
-import { useConnectModal } from "@rainbow-me/rainbowkit";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { toast } from "@/hooks/use-toast";
 import { getBalance, shortenAddress } from "@/lib/wallet";
+import { BrowserProvider } from "ethers";
 
 interface WalletContextValue {
   address: string | null;
@@ -28,10 +28,8 @@ const WalletContext = createContext<WalletContextValue>({
 });
 
 export function WalletProvider({ children }: { children: ReactNode }) {
-  const { address: wagmiAddress, isConnected } = useAccount();
-  const { openConnectModal } = useConnectModal();
-  const { disconnect: wagmiDisconnect } = useDisconnect();
-  const { signMessageAsync } = useSignMessage();
+  const { ready, authenticated, login, logout, user } = usePrivy();
+  const { wallets } = useWallets();
 
   const [balance, setBalance] = useState("0");
   const [isConnecting, setIsConnecting] = useState(false);
@@ -81,40 +79,43 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // When wagmi connects and we're not yet authenticated, run auth flow
-  // Only after initial session check is done to avoid re-prompting on refresh
+  // When Privy authenticates and we have a wallet, run Supabase auth flow
   useEffect(() => {
-    if (sessionChecked && isConnected && wagmiAddress && !isAuthenticated && !isConnecting) {
-      authenticateWallet(wagmiAddress);
+    if (!sessionChecked || !ready || !authenticated || isAuthenticated || isConnecting) return;
+
+    const wallet = wallets.find(w => w.walletClientType !== "privy");
+    if (wallet?.address) {
+      authenticateWallet(wallet.address, wallet);
     }
-  }, [sessionChecked, isConnected, wagmiAddress, isAuthenticated, isConnecting]);
+  }, [sessionChecked, ready, authenticated, wallets, isAuthenticated, isConnecting]);
 
   // Refresh balance
   useEffect(() => {
-    const addr = authedAddress || (isConnected ? wagmiAddress : null);
+    const addr = authedAddress || (authenticated && wallets[0]?.address) || null;
     if (addr) {
       getBalance(addr).then(setBalance);
     }
-  }, [authedAddress, wagmiAddress, isConnected]);
+  }, [authedAddress, wallets, authenticated]);
 
-  const authenticateWallet = useCallback(async (addr: string) => {
+  const authenticateWallet = useCallback(async (addr: string, wallet: any) => {
     setIsConnecting(true);
     try {
-      // Sign message for verification
       const message = `Sign in to Snap'n'Invest\n\nWallet: ${addr}\nTimestamp: ${Date.now()}`;
 
       let signature: string;
       try {
-        signature = await signMessageAsync({ message, account: addr as `0x${string}` });
+        const provider = await wallet.getEthereumProvider();
+        const ethersProvider = new BrowserProvider(provider);
+        const signer = await ethersProvider.getSigner();
+        signature = await signer.signMessage(message);
       } catch (sigErr) {
         console.error("Signature rejected:", sigErr);
         toast({ title: "Signature rejected", description: "You need to sign the message to authenticate.", variant: "destructive" });
-        wagmiDisconnect();
+        logout();
         setIsConnecting(false);
         return;
       }
 
-      // Call backend
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
@@ -132,7 +133,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       if (!response.ok || !data?.access_token) {
         console.error("Wallet auth failed:", data);
         toast({ title: "Authentication failed", description: data?.error || "Could not authenticate wallet.", variant: "destructive" });
-        wagmiDisconnect();
+        logout();
         setIsConnecting(false);
         return;
       }
@@ -150,29 +151,27 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error("Wallet auth error:", err);
       toast({ title: "Connection failed", description: String(err), variant: "destructive" });
-      wagmiDisconnect();
+      logout();
     } finally {
       setIsConnecting(false);
     }
-  }, [signMessageAsync, wagmiDisconnect]);
+  }, [logout]);
 
   const connect = useCallback(() => {
-    if (openConnectModal) {
-      openConnectModal();
-    }
-  }, [openConnectModal]);
+    login();
+  }, [login]);
 
-  const disconnect = useCallback(() => {
-    wagmiDisconnect();
+  const handleDisconnect = useCallback(() => {
+    logout();
     supabase.auth.signOut();
     setAuthedAddress(null);
     setBalance("0");
     setIsAuthenticated(false);
     setUserId(null);
     toast({ title: "Wallet disconnected" });
-  }, [wagmiDisconnect]);
+  }, [logout]);
 
-  const displayAddress = authedAddress || (isConnected ? wagmiAddress?.toLowerCase() ?? null : null);
+  const displayAddress = authedAddress || (authenticated && wallets[0]?.address?.toLowerCase()) || null;
 
   return (
     <WalletContext.Provider
@@ -184,7 +183,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         isAuthenticated,
         userId,
         connect,
-        disconnect,
+        disconnect: handleDisconnect,
       }}
     >
       {children}
