@@ -1,10 +1,11 @@
-import { Camera, Home, PieChart } from "lucide-react";
+import { Camera, Home, PieChart, Rss } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
 const tabs = [
   { path: "/", label: "Home", icon: Home },
   { path: "/camera", label: "Snap", icon: Camera },
+  { path: "/feed", label: "Feed", icon: Rss },
   { path: "/portfolio", label: "Portfolio", icon: PieChart },
 ];
 
