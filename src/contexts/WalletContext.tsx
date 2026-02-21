@@ -2,7 +2,6 @@ import { createContext, useContext, useState, useEffect, useCallback, ReactNode 
 import { supabase } from "@/integrations/supabase/client";
 import { useAccount, useDisconnect, useSignMessage } from "wagmi";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
-import { useAppMode } from "./AppModeContext";
 import { toast } from "@/hooks/use-toast";
 import { getBalance, shortenAddress } from "@/lib/wallet";
 
@@ -29,7 +28,6 @@ const WalletContext = createContext<WalletContextValue>({
 });
 
 export function WalletProvider({ children }: { children: ReactNode }) {
-  const { mode } = useAppMode();
   const { address: wagmiAddress, isConnected } = useAccount();
   const { openConnectModal } = useConnectModal();
   const { disconnect: wagmiDisconnect } = useDisconnect();

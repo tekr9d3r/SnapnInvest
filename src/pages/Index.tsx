@@ -2,17 +2,11 @@ import { useNavigate } from "react-router-dom";
 import { Camera, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { useAppMode } from "@/contexts/AppModeContext";
-import { useWallet } from "@/contexts/WalletContext";
 
 import robinhoodLogo from "@/assets/robinhood-logo.png";
-import arbitrumLogo from "@/assets/arbitrum-logo.png";
 
 const Index = () => {
   const navigate = useNavigate();
-  const { mode } = useAppMode();
-  const { isAuthenticated } = useWallet();
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-background px-6 pb-24 pt-16">
@@ -61,19 +55,15 @@ const Index = () => {
         transition={{ duration: 0.5, delay: 0.4 }}
         className="mt-10 flex flex-col items-center gap-3"
       >
-        {mode === "onchain" && !isAuthenticated ? (
-          <ConnectButton label="Connect Wallet" />
-        ) : (
-          <Button
-            size="lg"
-            onClick={() => navigate("/camera")}
-            className="group h-14 gap-3 rounded-2xl px-8 text-lg font-semibold animate-pulse-glow"
-          >
-            <Camera className="h-5 w-5" />
-            Open Camera
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-          </Button>
-        )}
+        <Button
+          size="lg"
+          onClick={() => navigate("/camera")}
+          className="group h-14 gap-3 rounded-2xl px-8 text-lg font-semibold animate-pulse-glow"
+        >
+          <Camera className="h-5 w-5" />
+          Open Camera
+          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+        </Button>
       </motion.div>
 
       {/* Works with any stock */}
@@ -86,24 +76,6 @@ const Index = () => {
         <span className="text-xs font-semibold text-muted-foreground">
           Works with any publicly traded stock 📈
         </span>
-      </motion.div>
-
-      {/* Powered by */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1 }}
-        className="mt-auto flex items-center gap-3 pb-2"
-      >
-        <div className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1">
-          <img src={robinhoodLogo} alt="Robinhood" className="h-4 w-4 rounded-sm object-contain" />
-          <span className="text-[10px] font-semibold text-muted-foreground">Robinhood</span>
-        </div>
-        <span className="text-[10px] text-muted-foreground">×</span>
-        <div className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1">
-          <img src={arbitrumLogo} alt="Arbitrum" className="h-4 w-4 rounded-sm object-contain" />
-          <span className="text-[10px] font-semibold text-muted-foreground">Arbitrum</span>
-        </div>
       </motion.div>
     </div>
   );
