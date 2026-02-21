@@ -1,11 +1,28 @@
 import { useLocation } from "react-router-dom";
 import { useWallet } from "@/contexts/WalletContext";
 import { Button } from "@/components/ui/button";
-import { Wallet, LogOut } from "lucide-react";
+import { Wallet, LogOut, ExternalLink } from "lucide-react";
+import { useCallback } from "react";
+
+const isInIframe = (() => {
+  try {
+    return window.self !== window.top;
+  } catch {
+    return true;
+  }
+})();
 
 export function TopBar() {
   const location = useLocation();
   const { address, shortAddress, isConnecting, connect, disconnect } = useWallet();
+
+  const handleConnect = useCallback(() => {
+    if (isInIframe) {
+      window.open(window.location.href.replace(/id-preview--[^.]+\.lovable\.app/, "snap-buy-vision.lovable.app"), "_blank");
+      return;
+    }
+    connect();
+  }, [connect]);
 
   if (["/camera", "/result", "/confirm"].includes(location.pathname)) return null;
 
@@ -23,9 +40,9 @@ export function TopBar() {
             </Button>
           </div>
         ) : (
-          <Button variant="outline" size="sm" onClick={connect} disabled={isConnecting}>
-            <Wallet className="h-4 w-4 mr-1" />
-            {isConnecting ? "Connecting…" : "Connect"}
+          <Button variant="outline" size="sm" onClick={handleConnect} disabled={isConnecting}>
+            {isInIframe ? <ExternalLink className="h-4 w-4 mr-1" /> : <Wallet className="h-4 w-4 mr-1" />}
+            {isConnecting ? "Connecting…" : isInIframe ? "Open to Connect" : "Connect"}
           </Button>
         )}
       </div>
