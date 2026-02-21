@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { connectWallet as connectMetaMask, getBalance, shortenAddress, ROBINHOOD_CHAIN } from "@/lib/wallet";
+import { connectWallet as connectMetaMask, getBalance, shortenAddress } from "@/lib/wallet";
 import { useAppMode } from "./AppModeContext";
 import { toast } from "@/hooks/use-toast";
 
@@ -26,52 +26,6 @@ const WalletContext = createContext<WalletContextValue>({
   disconnect: () => {},
 });
 
-async function switchToRobinhoodChain(): Promise<boolean> {
-  if (!window.ethereum) return false;
-  
-  // Check if already on the right chain
-  try {
-    const currentChainId = await window.ethereum.request({ method: "eth_chainId" }) as string;
-    console.log("Current chain:", currentChainId, "Target:", ROBINHOOD_CHAIN.chainId);
-    if (currentChainId.toLowerCase() === ROBINHOOD_CHAIN.chainId.toLowerCase()) {
-      console.log("Already on Robinhood Chain");
-      return true;
-    }
-  } catch (err) {
-    console.error("Failed to get current chain:", err);
-  }
-
-  // Try switching
-  try {
-    await window.ethereum.request({
-      method: "wallet_switchEthereumChain",
-      params: [{ chainId: ROBINHOOD_CHAIN.chainId }],
-    });
-    return true;
-  } catch (switchError: any) {
-    // Chain not added yet (4902) or unrecognized chain
-    if (switchError?.code === 4902 || switchError?.code === -32603) {
-      try {
-        await window.ethereum.request({
-          method: "wallet_addEthereumChain",
-          params: [{
-            chainId: ROBINHOOD_CHAIN.chainId,
-            chainName: ROBINHOOD_CHAIN.chainName,
-            nativeCurrency: ROBINHOOD_CHAIN.nativeCurrency,
-            rpcUrls: ROBINHOOD_CHAIN.rpcUrls,
-            blockExplorerUrls: ROBINHOOD_CHAIN.blockExplorerUrls,
-          }],
-        });
-        return true;
-      } catch (addErr) {
-        console.error("Failed to add chain:", addErr);
-        return false;
-      }
-    }
-    console.error("Failed to switch chain:", switchError);
-    return false;
-  }
-}
 
 export function WalletProvider({ children }: { children: ReactNode }) {
   const { mode } = useAppMode();
@@ -150,15 +104,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Step 2: Switch to Robinhood Chain
-      const switched = await switchToRobinhoodChain();
-      if (!switched) {
-        toast({ title: "Wrong network", description: "Please switch to Robinhood Chain to continue.", variant: "destructive" });
-        setIsConnecting(false);
-        return;
-      }
-
-      // Step 3: Request signature for auth
+      // Step 2: Request signature for auth
       const message = `Sign in to Snap'n'Buy\n\nWallet: ${addr}\nTimestamp: ${Date.now()}`;
       let signature: string;
       try {
@@ -173,7 +119,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Step 4: Authenticate via edge function
+      // Step 3: Authenticate via edge function
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
@@ -197,7 +143,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Step 5: Set session
+      // Step 4: Set session
       await supabase.auth.setSession({
         access_token: data.access_token,
         refresh_token: data.refresh_token,

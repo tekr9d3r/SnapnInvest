@@ -33,15 +33,25 @@ export async function connectWallet(): Promise<string | null> {
 }
 
 export async function getBalance(address: string): Promise<string> {
-  if (!window.ethereum) return "0";
+  // Always fetch from Robinhood Chain RPC, regardless of wallet's active chain
   try {
-    const balance = (await window.ethereum.request({
-      method: "eth_getBalance",
-      params: [address, "latest"],
-    })) as string;
-    const wei = BigInt(balance);
-    const eth = Number(wei) / 1e18;
-    return eth.toFixed(4);
+    const response = await fetch(ROBINHOOD_CHAIN.rpcUrls[0], {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        method: "eth_getBalance",
+        params: [address, "latest"],
+        id: 1,
+      }),
+    });
+    const data = await response.json();
+    if (data.result) {
+      const wei = BigInt(data.result);
+      const eth = Number(wei) / 1e18;
+      return eth.toFixed(4);
+    }
+    return "0.0000";
   } catch {
     return "0.0000";
   }
