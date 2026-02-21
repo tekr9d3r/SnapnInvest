@@ -118,7 +118,7 @@ export default function FeedPage() {
             {items.map((item) => (
               <article
                 key={item.id}
-                className="relative flex gap-3 rounded-xl border border-border bg-card p-3"
+                className="relative flex flex-col rounded-xl border border-border bg-card p-3 overflow-hidden"
               >
                 {/* Delete button for own snaps */}
                 {userId && item.user_id === userId && (
@@ -131,19 +131,15 @@ export default function FeedPage() {
                   </button>
                 )}
 
-                {item.captured_image_url ? (
+                {item.captured_image_url && (
                   <img
                     src={item.captured_image_url}
                     alt={`${item.ticker} snap`}
-                    className="h-16 w-16 flex-shrink-0 rounded-lg object-cover"
+                    className="w-full rounded-lg object-cover mb-3"
                   />
-                ) : (
-                  <div className="h-16 w-16 flex-shrink-0 rounded-lg bg-secondary flex items-center justify-center">
-                    <StockLogo ticker={item.ticker} logoUrl={item.logo_url || undefined} size="sm" />
-                  </div>
                 )}
 
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <StockLogo ticker={item.ticker} logoUrl={item.logo_url || undefined} size="sm" className="h-5 w-5" />
                     <span className="font-semibold text-sm text-foreground">{item.ticker}</span>
