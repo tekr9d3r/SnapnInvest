@@ -17,6 +17,7 @@ import ResultPage from "./pages/ResultPage";
 import ConfirmPage from "./pages/ConfirmPage";
 import PortfolioPage from "./pages/PortfolioPage";
 import OnchainPortfolioPage from "./pages/OnchainPortfolioPage";
+import FeedPage from "./pages/FeedPage";
 import NotFound from "./pages/NotFound";
 import { useAppMode } from "@/contexts/AppModeContext";
 
@@ -42,6 +43,7 @@ const App = () => (
                   <Route path="/camera" element={<CameraPage />} />
                   <Route path="/result" element={<ResultPage />} />
                   <Route path="/confirm" element={<ConfirmPage />} />
+                  <Route path="/feed" element={<FeedPage />} />
                   <Route path="/portfolio" element={<PortfolioRouter />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
