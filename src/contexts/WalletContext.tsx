@@ -101,7 +101,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     setIsConnecting(true);
     try {
       // Sign message for verification
-      const message = `Sign in to Snap'n'Buy\n\nWallet: ${addr}\nTimestamp: ${Date.now()}`;
+      const message = `Sign in to Snap'n'Invest\n\nWallet: ${addr}\nTimestamp: ${Date.now()}`;
 
       let signature: string;
       try {

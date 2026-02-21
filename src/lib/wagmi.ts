@@ -17,7 +17,7 @@ export const robinhoodChainTestnet = defineChain({
 });
 
 export const wagmiConfig = getDefaultConfig({
-  appName: "Snap'n'Buy",
+  appName: "Snap'n'Invest",
   // Public WalletConnect project ID for dev — replace with your own for production
   projectId: '04bdc5c261ea48939810f11a3da3768b',
   chains: [robinhoodChainTestnet, arbitrum, mainnet, base, optimism],
