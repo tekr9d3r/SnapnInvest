@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { toast } from "@/hooks/use-toast";
 import { getBalance, shortenAddress } from "@/lib/wallet";
-import { BrowserProvider } from "ethers";
 
 interface WalletContextValue {
   address: string | null;
@@ -28,7 +27,7 @@ const WalletContext = createContext<WalletContextValue>({
 });
 
 export function WalletProvider({ children }: { children: ReactNode }) {
-  const { ready, authenticated, login, logout, user } = usePrivy();
+  const { ready, authenticated, login, logout, user, getAccessToken } = usePrivy();
   const { wallets } = useWallets();
 
   const [balance, setBalance] = useState("0");
@@ -99,7 +98,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         }
       } else {
         // No session — request signature
-        authenticateWallet(wallet.address, wallet);
+        authenticateWallet(wallet.address);
       }
     });
   }, [sessionChecked, ready, authenticated, wallets, isAuthenticated, isConnecting]);
@@ -112,20 +111,14 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }, [authedAddress, wallets, authenticated]);
 
-  const authenticateWallet = useCallback(async (addr: string, wallet: any) => {
+  const authenticateWallet = useCallback(async (addr: string) => {
     setIsConnecting(true);
     try {
-      const message = `Sign in to Snap'n'Invest\n\nWallet: ${addr}\nTimestamp: ${Date.now()}`;
-
-      let signature: string;
-      try {
-        const provider = await wallet.getEthereumProvider();
-        const ethersProvider = new BrowserProvider(provider);
-        const signer = await ethersProvider.getSigner();
-        signature = await signer.signMessage(message);
-      } catch (sigErr) {
-        console.error("Signature rejected:", sigErr);
-        toast({ title: "Signature rejected", description: "You need to sign the message to authenticate.", variant: "destructive" });
+      // Get Privy access token (no second signature needed)
+      const privyToken = await getAccessToken();
+      if (!privyToken) {
+        console.error("Failed to get Privy access token");
+        toast({ title: "Authentication failed", description: "Could not get authentication token.", variant: "destructive" });
         logout();
         setIsConnecting(false);
         return;
@@ -140,7 +133,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           "Content-Type": "application/json",
           "apikey": supabaseKey,
         },
-        body: JSON.stringify({ address: addr, signature, message }),
+        body: JSON.stringify({ privyToken, address: addr }),
       });
 
       const data = await response.json();
@@ -170,7 +163,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsConnecting(false);
     }
-  }, [logout]);
+  }, [logout, getAccessToken]);
 
   const connect = useCallback(() => {
     login();
