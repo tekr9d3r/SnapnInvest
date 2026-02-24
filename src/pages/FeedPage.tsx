@@ -102,7 +102,7 @@ export default function FeedPage() {
 
   return (
     <main className="min-h-screen bg-background pb-24 pt-16">
-      <div className="mx-auto max-w-md px-4 py-6">
+      <div className="mx-auto max-w-7xl px-4 md:px-8 py-6">
         <h1 className="mb-6 text-xl font-bold text-foreground">Live Feed</h1>
 
         {loading ? (
@@ -114,7 +114,7 @@ export default function FeedPage() {
             No snaps yet. Be the first to snap a stock!
           </p>
         ) : (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3">
             {items.map((item) => (
               <article
                 key={item.id}
