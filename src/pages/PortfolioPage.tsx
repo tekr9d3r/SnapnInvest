@@ -92,7 +92,7 @@ const PortfolioPage = () => {
   const hasDb = dbSummaries.length > 0;
 
   return (
-    <div className="min-h-screen bg-background px-6 pb-24 pt-16">
+    <div className="min-h-screen bg-background px-4 md:px-8 pb-24 pt-16 max-w-7xl mx-auto">
       {/* Lightbox */}
       <AnimatePresence>
         {lightboxImage && (
@@ -124,7 +124,7 @@ const PortfolioPage = () => {
 
       {/* Wallet Balance (only when connected) */}
       {hasWallet && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-4 rounded-2xl border border-border bg-card p-5">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-4 rounded-2xl border border-border bg-card p-5 md:max-w-sm">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Wallet Balance</p>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="font-display text-3xl font-bold text-foreground">{balance}</span>
@@ -147,7 +147,7 @@ const PortfolioPage = () => {
               <span className="ml-2 text-sm text-muted-foreground">Fetching on-chain balances…</span>
             </div>
           ) : (
-            <div className="mb-6 space-y-2">
+            <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3">
               {tokensWithBalance.map((token, i) => (
                 <motion.div key={token.ticker} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="flex items-center justify-between rounded-2xl border border-border bg-card p-4">
                   <div className="flex items-center gap-3">
@@ -202,11 +202,11 @@ const PortfolioPage = () => {
             </motion.div>
           ) : (
             <>
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-4 rounded-2xl border border-border bg-card p-4">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-4 rounded-2xl border border-border bg-card p-4 md:max-w-sm">
                 <div className="flex justify-between text-sm"><span className="text-muted-foreground">Total Invested</span><span className="font-semibold text-foreground">${dbTotalInvested.toFixed(2)}</span></div>
                 <div className="mt-1 flex justify-between text-sm"><span className="text-muted-foreground">Current Value</span><span className="font-semibold text-foreground">${dbTotalValue.toFixed(2)}</span></div>
               </motion.div>
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                 {dbSummaries.map((s, i) => (
                   <motion.div key={s.ticker} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="overflow-hidden rounded-2xl border border-border bg-card">
                     {s.latestImage && (
@@ -239,7 +239,7 @@ const PortfolioPage = () => {
         <>
           {hasLocal ? (
             <>
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-6 rounded-2xl border border-border bg-card p-6">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-6 rounded-2xl border border-border bg-card p-6 md:max-w-sm">
                 <p className="text-sm text-muted-foreground">Total Value</p>
                 <p className="mt-1 font-display text-3xl font-bold text-foreground">${localSummary.totalValue.toFixed(2)}</p>
                 <div className="mt-2 flex items-center gap-2">
@@ -249,7 +249,7 @@ const PortfolioPage = () => {
                   </span>
                 </div>
               </motion.div>
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                 {localSummary.summaries.map((s, i) => (
                   <motion.div key={s.ticker} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="overflow-hidden rounded-2xl border border-border bg-card">
                     {s.latestImage && (
