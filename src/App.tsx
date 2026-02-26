@@ -28,6 +28,7 @@ const App = () => (
       appearance: {
         theme: "dark",
         accentColor: "#00dc82",
+        walletList: ["detected_ethereum_wallets", "wallet_connect", "metamask", "coinbase_wallet", "rainbow"],
       },
       loginMethods: ["wallet"],
       embeddedWallets: {
