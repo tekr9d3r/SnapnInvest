@@ -29,7 +29,7 @@ const App = () => (
         theme: "dark",
         accentColor: "#00dc82",
       },
-      loginMethods: ["wallet", "twitter", "google", "email"],
+      loginMethods: ["wallet"],
       embeddedWallets: {
         ethereum: {
           createOnLogin: "off",
