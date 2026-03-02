@@ -50,12 +50,12 @@ function TokenizationMarquee() {
         {strip.map((item, i) => (
           <div
             key={`${item.id}-${i}`}
-            className="group relative h-44 w-36 shrink-0 overflow-hidden rounded-2xl border border-border bg-card shadow-lg transition-transform hover:scale-105"
+            className="group relative h-72 w-56 shrink-0 overflow-hidden rounded-2xl border border-border bg-card shadow-lg transition-transform hover:scale-105"
           >
             <img
               src={item.captured_image_url!}
               alt={item.ticker}
-              className="h-24 w-full object-cover"
+              className="h-40 w-full object-cover"
               loading="lazy"
             />
             {/* Pulse dot */}
