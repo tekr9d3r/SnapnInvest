@@ -185,7 +185,48 @@ export default function LandingPage() {
             <span className="text-gradient">Own it.</span>
           </h1>
 
-          <p className="mx-auto mt-6 max-w-lg text-lg text-muted-foreground">
+          {/* Email signup - between headline and description */}
+          <div className="mx-auto mt-8 w-full max-w-md">
+            <h2 className="font-display text-xl font-bold text-foreground">
+              Get Early Access
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Join the waitlist to be among the first to try Snap'n Invest.
+            </p>
+
+            {submitted ? (
+              <div className="mt-4 rounded-2xl border border-primary/30 bg-primary/5 p-6">
+                <p className="text-sm font-semibold text-primary">You're on the list! 🎉</p>
+                <p className="mt-1 text-xs text-muted-foreground">We'll be in touch soon.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="mt-4 flex gap-2">
+                <input
+                  name="website"
+                  value={honeypot}
+                  onChange={(e) => setHoneypot(e.target.value)}
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                  style={{ position: 'absolute', left: '-9999px' }}
+                />
+                <Input
+                  type="email"
+                  placeholder="your@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="h-12 rounded-xl bg-card border-border"
+                />
+                <Button type="submit" disabled={loading} className="h-12 shrink-0 gap-2 rounded-xl px-6">
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+                  Join
+                </Button>
+              </form>
+            )}
+          </div>
+
+          <p className="mx-auto mt-8 max-w-lg text-lg text-muted-foreground">
             The first app that turns everyday product discovery into real investment. 
             Point your camera, recognize the brand, and buy tokenized stocks — instantly.
           </p>
@@ -208,53 +249,6 @@ export default function LandingPage() {
             </span>
           </div>
           <TokenizationMarquee />
-        </motion.div>
-
-        {/* Email signup */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-          className="mt-12 w-full max-w-md text-center"
-        >
-          <h2 className="font-display text-2xl font-bold text-foreground">
-            Get Early Access
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Join the waitlist to be among the first to try Snap'n Invest.
-          </p>
-
-          {submitted ? (
-            <div className="mt-6 rounded-2xl border border-primary/30 bg-primary/5 p-6">
-              <p className="text-sm font-semibold text-primary">You're on the list! 🎉</p>
-              <p className="mt-1 text-xs text-muted-foreground">We'll be in touch soon.</p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="mt-6 flex gap-2">
-              {/* Honeypot - hidden from real users */}
-              <input
-                name="website"
-                value={honeypot}
-                onChange={(e) => setHoneypot(e.target.value)}
-                tabIndex={-1}
-                autoComplete="off"
-                aria-hidden="true"
-                style={{ position: 'absolute', left: '-9999px' }}
-              />
-              <Input
-                type="email"
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="h-12 rounded-xl bg-card border-border"
-              />
-              <Button type="submit" disabled={loading} className="h-12 shrink-0 gap-2 rounded-xl px-6">
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-                Join
-              </Button>
-            </form>
-          )}
         </motion.div>
 
         {/* Value Props */}
