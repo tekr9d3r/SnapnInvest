@@ -163,12 +163,31 @@ export default function LandingPage() {
           </p>
         </motion.div>
 
+        {/* Live feed */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.3 }}
+          className="mt-12 w-full max-w-4xl"
+        >
+          <div className="mb-3 flex items-center justify-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+            </span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Live Tokenizations
+            </span>
+          </div>
+          <TokenizationMarquee />
+        </motion.div>
+
         {/* Email signup */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="mt-10 w-full max-w-md text-center"
+          transition={{ duration: 0.6, delay: 0.5 }}
+          className="mt-12 w-full max-w-md text-center"
         >
           <h2 className="font-display text-2xl font-bold text-foreground">
             Get Early Access
@@ -204,7 +223,7 @@ export default function LandingPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
+          transition={{ duration: 0.6, delay: 0.7 }}
           className="mt-16 grid w-full max-w-3xl grid-cols-1 gap-4 sm:grid-cols-3"
         >
           {valueProps.map((prop) => (
@@ -219,25 +238,6 @@ export default function LandingPage() {
               <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{prop.description}</p>
             </div>
           ))}
-        </motion.div>
-
-        {/* Live feed */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.5 }}
-          className="mt-16 w-full max-w-4xl"
-        >
-          <div className="mb-3 flex items-center justify-center gap-2">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
-            </span>
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Live Tokenizations
-            </span>
-          </div>
-          <TokenizationMarquee />
         </motion.div>
 
       </main>
