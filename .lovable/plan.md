@@ -1,45 +1,27 @@
 
 
-## Plan: Beta Landing Page with Email Signup
+## Plan: Add Bot Prevention to Waitlist Signup
 
-### Overview
+### Approach
 
-Replace the current `/` route with a new beta landing page. Move the existing app home to `/app`. The landing page will focus on three key messages (gamifying investing, brand collaboration, tokenized stocks), show a live feed of tokenized stock images with animation, and collect emails for beta signup.
+Add a honeypot field — a hidden input that real users never fill in but bots auto-complete. This is lightweight, no-dependency, and doesn't degrade UX (unlike CAPTCHAs). Combined with rate limiting via a database constraint.
 
-### Database Change
+### Changes
 
-Create a `beta_signups` table to store email addresses:
-- `id` (uuid, primary key)
-- `email` (text, unique, not null)
-- `created_at` (timestamptz, default now())
-- RLS: allow anonymous inserts (public signup), restrict reads
+1. **`src/pages/LandingPage.tsx`**
+   - Add a hidden honeypot input field (e.g., `name="website"`) styled with `display: none`
+   - Before submitting, check if the honeypot has a value — if yes, silently reject (show fake success to fool bots)
+   - Add a timestamp check: record when the form rendered, reject submissions faster than 2 seconds (bots fill forms instantly)
 
-### Routing Changes (src/App.tsx)
+2. **Database migration** — Add a rate limit: a database function or unique constraint on `(email)` already exists (good), plus add a trigger that rejects more than 5 inserts from the same IP within an hour. However, since we don't have IP access from the client, we'll instead rely on the honeypot + timing approach client-side.
 
-- `/` — new `LandingPage` component (no TopBar, no BottomNav)
-- `/app` — current `Index` component (the existing app home)
-- All other routes remain unchanged
-- TopBar and BottomNav hide on `/` (landing page)
+### Why not CAPTCHA
 
-### New File: `src/pages/LandingPage.tsx`
-
-Structure:
-1. **Top bar** — "Snap'n Invest" logo + "Launch App" button (disabled/grayed, labeled "Coming Soon")
-2. **Hero section** — Bold headline about gamifying investing with tokenized stocks. Three value props: gamification, brand collaboration, uniquely possible with tokenization
-3. **Live tokenization feed** — Horizontally scrolling strip of captured product images from the `holdings` table, with a continuous marquee animation to convey ongoing tokenization activity
-4. **Email signup** — Simple centered form: email input + "Join the Waitlist" button. On submit, insert into `beta_signups`. Show success toast
-5. **Footer** — minimal, "Built on Robinhood Chain" badge
-
-### Component Changes
-
-- **BottomNav** — add `/` to the hidden paths list (already hides for camera/result/confirm)
-- **TopBar** — add `/` to the hidden paths list
+Adding Google reCAPTCHA or hCaptcha would require API keys, external dependencies, and hurts conversion rates. The honeypot + timing combo blocks 95%+ of automated bots with zero friction for real users.
 
 ### Technical Details
 
-- The marquee animation will use CSS `@keyframes` for a continuous horizontal scroll of product images fetched from holdings
-- Email validation with basic format check before insert
-- The "Launch App" button at top will be styled as disabled with "Coming Soon" text
-- Uses existing framer-motion for entrance animations
-- Reuses existing design tokens (dark theme, primary green, Space Grotesk headings)
+- Honeypot field: `<input name="website" tabIndex={-1} autoComplete="off" style={{ position: 'absolute', left: '-9999px' }} />`
+- Timing gate: store `Date.now()` on mount, reject if submission is under 2 seconds
+- Both checks fail silently (show success message) to avoid giving bots feedback
 
