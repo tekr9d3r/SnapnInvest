@@ -91,12 +91,22 @@ const valueProps = [
 
 export default function LandingPage() {
   const [email, setEmail] = useState("");
+  const [honeypot, setHoneypot] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [mountTime] = useState(() => Date.now());
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Bot detection: honeypot filled or submitted too fast
+    if (honeypot || Date.now() - mountTime < 2000) {
+      setSubmitted(true);
+      toast({ title: "You're on the list! 🎉", description: "We'll reach out when it's your turn." });
+      return;
+    }
+
     const trimmed = email.trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
       toast({ title: "Invalid email", description: "Please enter a valid email address.", variant: "destructive" });
@@ -203,6 +213,16 @@ export default function LandingPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="mt-6 flex gap-2">
+              {/* Honeypot - hidden from real users */}
+              <input
+                name="website"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                style={{ position: 'absolute', left: '-9999px' }}
+              />
               <Input
                 type="email"
                 placeholder="your@email.com"
