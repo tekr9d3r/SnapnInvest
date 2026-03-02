@@ -7,40 +7,42 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import robinhoodLogo from "@/assets/robinhood-logo.png";
 
-interface HoldingImage {
+interface HoldingItem {
   id: string;
   captured_image_url: string | null;
   ticker: string;
+  logo_url: string | null;
+  amount_invested: number | null;
+  shares: number | null;
+  name: string | null;
 }
 
 function TokenizationMarquee() {
-  const [images, setImages] = useState<HoldingImage[]>([]);
+  const [items, setItems] = useState<HoldingItem[]>([]);
 
   useEffect(() => {
-    const fetchImages = async () => {
+    const fetchItems = async () => {
       try {
         const { data } = await supabase
           .from("holdings")
-          .select("id, captured_image_url, ticker")
+          .select("id, captured_image_url, ticker, logo_url, amount_invested, shares, name")
           .not("captured_image_url", "is", null)
           .order("created_at", { ascending: false })
           .limit(20);
-        if (data && data.length > 0) setImages(data);
+        if (data && data.length > 0) setItems(data);
       } catch (err) {
-        console.error("Failed to fetch holdings images:", err);
+        console.error("Failed to fetch holdings:", err);
       }
     };
-    fetchImages();
+    fetchItems();
   }, []);
 
-  if (images.length === 0) return null;
+  if (items.length === 0) return null;
 
-  // Duplicate for seamless loop
-  const strip = [...images, ...images];
+  const strip = [...items, ...items];
 
   return (
     <div className="relative w-full overflow-hidden py-8">
-      {/* Fade edges */}
       <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-gradient-to-r from-background to-transparent" />
       <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-gradient-to-l from-background to-transparent" />
 
@@ -48,22 +50,38 @@ function TokenizationMarquee() {
         {strip.map((item, i) => (
           <div
             key={`${item.id}-${i}`}
-            className="group relative h-28 w-28 shrink-0 overflow-hidden rounded-2xl border border-border bg-card shadow-lg transition-transform hover:scale-105"
+            className="group relative h-44 w-36 shrink-0 overflow-hidden rounded-2xl border border-border bg-card shadow-lg transition-transform hover:scale-105"
           >
             <img
               src={item.captured_image_url!}
               alt={item.ticker}
-              className="h-full w-full object-cover"
+              className="h-24 w-full object-cover"
               loading="lazy"
             />
-            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-background/90 to-transparent px-2 py-1.5">
-              <span className="text-[10px] font-bold text-primary">${item.ticker}</span>
-            </div>
             {/* Pulse dot */}
             <span className="absolute right-1.5 top-1.5 flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
             </span>
+            {/* Info overlay */}
+            <div className="flex flex-col gap-1 px-2.5 py-2">
+              <div className="flex items-center gap-1.5">
+                {item.logo_url && (
+                  <img src={item.logo_url} alt="" className="h-4 w-4 rounded-sm object-contain" />
+                )}
+                <span className="text-xs font-bold text-foreground">${item.ticker}</span>
+              </div>
+              {item.amount_invested != null && (
+                <span className="text-[10px] text-muted-foreground">
+                  ${item.amount_invested.toFixed(2)} invested
+                </span>
+              )}
+              {item.shares != null && (
+                <span className="text-[10px] text-muted-foreground">
+                  {item.shares} shares
+                </span>
+              )}
+            </div>
           </div>
         ))}
       </div>
