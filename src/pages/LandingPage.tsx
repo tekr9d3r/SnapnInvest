@@ -17,16 +17,20 @@ function TokenizationMarquee() {
   const [images, setImages] = useState<HoldingImage[]>([]);
 
   useEffect(() => {
-    const fetch = async () => {
-      const { data } = await supabase
-        .from("holdings")
-        .select("id, captured_image_url, ticker")
-        .not("captured_image_url", "is", null)
-        .order("created_at", { ascending: false })
-        .limit(20);
-      if (data && data.length > 0) setImages(data);
+    const fetchImages = async () => {
+      try {
+        const { data } = await supabase
+          .from("holdings")
+          .select("id, captured_image_url, ticker")
+          .not("captured_image_url", "is", null)
+          .order("created_at", { ascending: false })
+          .limit(20);
+        if (data && data.length > 0) setImages(data);
+      } catch (err) {
+        console.error("Failed to fetch holdings images:", err);
+      }
     };
-    fetch();
+    fetchImages();
   }, []);
 
   if (images.length === 0) return null;
@@ -99,7 +103,7 @@ export default function LandingPage() {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.from("beta_signups").insert({ email: trimmed });
+    const { error } = await (supabase as any).from("beta_signups").insert({ email: trimmed });
     setLoading(false);
     if (error) {
       if (error.code === "23505") {
