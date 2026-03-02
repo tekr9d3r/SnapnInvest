@@ -9,6 +9,7 @@ import { WalletProvider } from "@/contexts/WalletContext";
 import { BottomNav } from "@/components/BottomNav";
 import { TopBar } from "@/components/TopBar";
 import Index from "./pages/Index";
+import LandingPage from "./pages/LandingPage";
 import CameraPage from "./pages/CameraPage";
 import ResultPage from "./pages/ResultPage";
 import ConfirmPage from "./pages/ConfirmPage";
@@ -68,7 +69,8 @@ const App = () => (
         <BrowserRouter>
           <WalletProvider>
             <Routes>
-              <Route path="/" element={<Index />} />
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/app" element={<Index />} />
               <Route path="/camera" element={<CameraPage />} />
               <Route path="/result" element={<ResultPage />} />
               <Route path="/confirm" element={<ConfirmPage />} />
