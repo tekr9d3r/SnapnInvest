@@ -1,35 +1,45 @@
 
 
-## Analysis: Two Signatures During Wallet Connection
+## Plan: Beta Landing Page with Email Signup
 
-### What's Happening
+### Overview
 
-1. **First signature** — Privy's built-in Sign-In With Ethereum (SIWE). This proves wallet ownership to Privy and is required by their SDK. Cannot be removed.
+Replace the current `/` route with a new beta landing page. Move the existing app home to `/app`. The landing page will focus on three key messages (gamifying investing, brand collaboration, tokenized stocks), show a live feed of tokenized stock images with animation, and collect emails for beta signup.
 
-2. **Second signature** — Your custom backend authentication flow in `WalletContext.tsx` (line ~108-115). After Privy authenticates, the code asks for *another* signature to create a Supabase/backend session via the `wallet-auth` edge function.
+### Database Change
 
-### Is the second signature necessary?
+Create a `beta_signups` table to store email addresses:
+- `id` (uuid, primary key)
+- `email` (text, unique, not null)
+- `created_at` (timestamptz, default now())
+- RLS: allow anonymous inserts (public signup), restrict reads
 
-**No.** It's redundant. Privy already verified the wallet. Instead of asking the user to sign again, you can use Privy's authentication token (available after the first signature) to verify the user on the backend, and issue a Supabase session based on that — eliminating the second signature entirely.
+### Routing Changes (src/App.tsx)
 
-### Proposed Changes
+- `/` — new `LandingPage` component (no TopBar, no BottomNav)
+- `/app` — current `Index` component (the existing app home)
+- All other routes remain unchanged
+- TopBar and BottomNav hide on `/` (landing page)
 
-1. **Update the `wallet-auth` edge function** to accept a Privy auth token instead of a raw signature. It would verify the token against Privy's public verification key (already returned in the API response) to confirm the user's wallet address, then issue a Supabase session.
+### New File: `src/pages/LandingPage.tsx`
 
-2. **Update `WalletContext.tsx`** to skip the manual `signMessage` call. Instead, after Privy authenticates, retrieve the Privy auth token via `getAccessToken()` and send it to the edge function.
+Structure:
+1. **Top bar** — "Snap'n Invest" logo + "Launch App" button (disabled/grayed, labeled "Coming Soon")
+2. **Hero section** — Bold headline about gamifying investing with tokenized stocks. Three value props: gamification, brand collaboration, uniquely possible with tokenization
+3. **Live tokenization feed** — Horizontally scrolling strip of captured product images from the `holdings` table, with a continuous marquee animation to convey ongoing tokenization activity
+4. **Email signup** — Simple centered form: email input + "Join the Waitlist" button. On submit, insert into `beta_signups`. Show success toast
+5. **Footer** — minimal, "Built on Robinhood Chain" badge
 
-3. **Result**: Users sign only once (Privy's SIWE), and the backend session is created automatically.
+### Component Changes
+
+- **BottomNav** — add `/` to the hidden paths list (already hides for camera/result/confirm)
+- **TopBar** — add `/` to the hidden paths list
 
 ### Technical Details
 
-**`WalletContext.tsx`** — Replace `authenticateWallet` to use Privy's access token:
-- Remove the `signMessage` flow
-- Call `getAccessToken()` from Privy
-- Send the access token to the `wallet-auth` edge function
-
-**`supabase/functions/wallet-auth/index.ts`** — Update to:
-- Accept `{ privyToken, address }` instead of `{ signature, message, address }`
-- Verify the Privy token using Privy's public key (ECDSA ES256)
-- Extract the wallet address from the verified token
-- Issue Supabase session as before
+- The marquee animation will use CSS `@keyframes` for a continuous horizontal scroll of product images fetched from holdings
+- Email validation with basic format check before insert
+- The "Launch App" button at top will be styled as disabled with "Coming Soon" text
+- Uses existing framer-motion for entrance animations
+- Reuses existing design tokens (dark theme, primary green, Space Grotesk headings)
 
