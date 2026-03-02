@@ -163,11 +163,48 @@ export default function LandingPage() {
           </p>
         </motion.div>
 
-        {/* Value Props */}
+        {/* Email signup */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
+          className="mt-10 w-full max-w-md text-center"
+        >
+          <h2 className="font-display text-2xl font-bold text-foreground">
+            Get Early Access
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Join the waitlist to be among the first to try Snap'n Invest.
+          </p>
+
+          {submitted ? (
+            <div className="mt-6 rounded-2xl border border-primary/30 bg-primary/5 p-6">
+              <p className="text-sm font-semibold text-primary">You're on the list! 🎉</p>
+              <p className="mt-1 text-xs text-muted-foreground">We'll be in touch soon.</p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="mt-6 flex gap-2">
+              <Input
+                type="email"
+                placeholder="your@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="h-12 rounded-xl bg-card border-border"
+              />
+              <Button type="submit" disabled={loading} className="h-12 shrink-0 gap-2 rounded-xl px-6">
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+                Join
+              </Button>
+            </form>
+          )}
+        </motion.div>
+
+        {/* Value Props */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
           className="mt-16 grid w-full max-w-3xl grid-cols-1 gap-4 sm:grid-cols-3"
         >
           {valueProps.map((prop) => (
@@ -203,42 +240,6 @@ export default function LandingPage() {
           <TokenizationMarquee />
         </motion.div>
 
-        {/* Email signup */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.7 }}
-          className="mt-12 w-full max-w-md text-center"
-        >
-          <h2 className="font-display text-2xl font-bold text-foreground">
-            Get Early Access
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Join the waitlist to be among the first to try Snap'n Invest.
-          </p>
-
-          {submitted ? (
-            <div className="mt-6 rounded-2xl border border-primary/30 bg-primary/5 p-6">
-              <p className="text-sm font-semibold text-primary">You're on the list! 🎉</p>
-              <p className="mt-1 text-xs text-muted-foreground">We'll be in touch soon.</p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="mt-6 flex gap-2">
-              <Input
-                type="email"
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="h-12 rounded-xl bg-card border-border"
-              />
-              <Button type="submit" disabled={loading} className="h-12 shrink-0 gap-2 rounded-xl px-6">
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-                Join
-              </Button>
-            </form>
-          )}
-        </motion.div>
       </main>
 
       {/* Footer */}
