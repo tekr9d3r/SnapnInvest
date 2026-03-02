@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
 const tabs = [
-  { path: "/", label: "Home", icon: Home },
+  { path: "/app", label: "Home", icon: Home },
   { path: "/camera", label: "Snap", icon: Camera },
   { path: "/feed", label: "Feed", icon: Rss },
   { path: "/portfolio", label: "Portfolio", icon: PieChart },
@@ -13,7 +13,7 @@ export function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  if (["/camera", "/result", "/confirm"].includes(location.pathname)) return null;
+  if (["/", "/camera", "/result", "/confirm"].includes(location.pathname)) return null;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/80 backdrop-blur-xl">
