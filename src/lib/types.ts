@@ -5,6 +5,8 @@ export interface Stock {
   contractAddress: string;
   currentPrice: number;
   logoUrl?: string;
+  poolAddress?: string;
+  tokenAddress?: string;
 }
 
 export interface Holding {
@@ -17,7 +19,11 @@ export interface Holding {
   shares: number;
   priceAtPurchase: number;
   date: string;
-  capturedImage?: string; // compressed base64 image taken at purchase
+  capturedImage?: string;
+  txHash?: string;
+  tokensReceived?: string;
+  tokenAddress?: string;
+  poolAddress?: string;
 }
 
 export interface PortfolioState {

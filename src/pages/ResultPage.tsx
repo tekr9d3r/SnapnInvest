@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Stock } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { findStockBySymbol } from "@/lib/stocks";
 
 const ResultPage = () => {
   const navigate = useNavigate();
@@ -64,13 +65,23 @@ const ResultPage = () => {
           return;
         }
 
+        const dexStock = findStockBySymbol(stockData.ticker);
+        if (!dexStock) {
+          toast.error("This stock isn't on MockSwap yet — try another brand.");
+          setMatchedStock(null);
+          setScanning(false);
+          return;
+        }
+
         const stock: Stock = {
           ticker: stockData.ticker,
           name: data.name || stockData.name,
           logo: "",
-          contractAddress: `0x...${stockData.ticker}`,
+          contractAddress: dexStock.tokenAddress,
           currentPrice: stockData.currentPrice,
           logoUrl: stockData.logoUrl,
+          poolAddress: dexStock.poolAddress,
+          tokenAddress: dexStock.tokenAddress,
         };
 
         setMatchedStock(stock);
