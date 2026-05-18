@@ -48,12 +48,28 @@ export async function executeSwap(
 ): Promise<{ hash: string; tokensReceived: string }> {
   const ethersProvider = new BrowserProvider(eip1193Provider as Parameters<typeof BrowserProvider>[0]);
 
-  // Switch to Robinhood Chain if needed
+  // Switch to Robinhood Chain, adding it first if the wallet doesn't know it
   const network = await ethersProvider.getNetwork();
   if (network.chainId !== BigInt(ROBINHOOD_CHAIN_ID)) {
-    await ethersProvider.send("wallet_switchEthereumChain", [
-      { chainId: ROBINHOOD_CHAIN_HEX },
-    ]);
+    try {
+      await ethersProvider.send("wallet_switchEthereumChain", [
+        { chainId: ROBINHOOD_CHAIN_HEX },
+      ]);
+    } catch (err: any) {
+      if (err?.code === 4902 || err?.error?.code === 4902) {
+        await ethersProvider.send("wallet_addEthereumChain", [
+          {
+            chainId: ROBINHOOD_CHAIN_HEX,
+            chainName: "Robinhood Chain Testnet",
+            nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+            rpcUrls: [ROBINHOOD_RPC],
+            blockExplorerUrls: ["https://explorer.testnet.chain.robinhood.com"],
+          },
+        ]);
+      } else {
+        throw err;
+      }
+    }
   }
 
   const signer = await ethersProvider.getSigner();
