@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Stock } from "@/lib/types";
 import { toast } from "sonner";
 import { findStockBySymbol } from "@/lib/stocks";
+import { compressImage } from "@/lib/imageUtils";
 
 const ResultPage = () => {
   const navigate = useNavigate();
@@ -24,11 +25,14 @@ const ResultPage = () => {
 
     const identifyBrand = async () => {
       try {
+        // Compress before sending to stay well under Vercel's 4.5MB body limit
+        const compressed = await compressImage(image, 1024, 0.7);
+
         // Step 1: AI identifies the brand
         const brandRes = await fetch("/api/identify-brand", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ image }),
+          body: JSON.stringify({ image: compressed }),
         });
         const data = await brandRes.json();
 

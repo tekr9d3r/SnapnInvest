@@ -1,12 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "content-type",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-};
-
 function getDb() {
   const url = process.env.DATABASE_URL || process.env.POSTGRES_URL;
   if (!url) throw new Error("DATABASE_URL is not configured");
@@ -14,9 +8,11 @@ function getDb() {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method === "OPTIONS") {
-    return res.status(200).setHeaders(corsHeaders).end();
-  }
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Headers", "content-type");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+
+  if (req.method === "OPTIONS") return res.status(200).end();
 
   if (req.method === "GET") {
     try {
@@ -39,10 +35,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             ORDER BY created_at DESC
             LIMIT ${limit}`;
 
-      return res.status(200).setHeaders(corsHeaders).json(rows);
+      return res.status(200).json(rows);
     } catch (e) {
       console.error("holdings GET error:", e);
-      return res.status(500).setHeaders(corsHeaders).json({ error: e instanceof Error ? e.message : "DB error" });
+      return res.status(500).json({ error: e instanceof Error ? e.message : "DB error" });
     }
   }
 
@@ -51,9 +47,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const sql = getDb();
       const { user_id, ticker, name, logo_url, amount_invested, shares, price_at_purchase, captured_image_url, tx_hash } = req.body || {};
 
-      if (!user_id || !ticker) {
-        return res.status(400).setHeaders(corsHeaders).json({ error: "user_id and ticker are required" });
-      }
+      if (!user_id || !ticker) return res.status(400).json({ error: "user_id and ticker are required" });
 
       const rows = await sql`
         INSERT INTO holdings (user_id, ticker, name, logo_url, amount_invested, shares, price_at_purchase, captured_image_url, tx_hash)
@@ -61,12 +55,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 ${shares || null}, ${price_at_purchase || null}, ${captured_image_url || null}, ${tx_hash || null})
         RETURNING id, created_at`;
 
-      return res.status(201).setHeaders(corsHeaders).json(rows[0]);
+      return res.status(201).json(rows[0]);
     } catch (e) {
       console.error("holdings POST error:", e);
-      return res.status(500).setHeaders(corsHeaders).json({ error: e instanceof Error ? e.message : "DB error" });
+      return res.status(500).json({ error: e instanceof Error ? e.message : "DB error" });
     }
   }
 
-  return res.status(405).setHeaders(corsHeaders).json({ error: "Method not allowed" });
+  return res.status(405).json({ error: "Method not allowed" });
 }

@@ -1,34 +1,26 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+function cors(res: VercelResponse) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Headers", "content-type");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method === "OPTIONS") {
-    return res.status(200).setHeaders(corsHeaders).end();
-  }
-  if (req.method !== "POST") {
-    return res.status(405).setHeaders(corsHeaders).json({ error: "Method not allowed" });
-  }
+  cors(res);
+  if (req.method === "OPTIONS") return res.status(200).end();
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   const { image } = req.body || {};
-  if (!image) {
-    return res.status(400).setHeaders(corsHeaders).json({ error: "No image provided" });
-  }
+  if (!image) return res.status(400).json({ error: "No image provided" });
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return res.status(500).setHeaders(corsHeaders).json({ error: "ANTHROPIC_API_KEY is not configured" });
-  }
+  if (!apiKey) return res.status(500).json({ error: "ANTHROPIC_API_KEY is not configured" });
 
   const match = (image as string).match(/^data:(image\/\w+);base64,(.+)$/);
-  if (!match) {
-    return res.status(400).setHeaders(corsHeaders).json({ error: "Invalid image format" });
-  }
+  if (!match) return res.status(400).json({ error: "Invalid image format" });
+
   const mediaType = match[1] as "image/jpeg" | "image/png" | "image/gif" | "image/webp";
   const base64Data = match[2];
 
@@ -69,17 +61,13 @@ Rules:
     });
 
     const text = response.content[0]?.type === "text" ? response.content[0].text.trim() : "";
-
-    // Extract JSON from response (handle any accidental markdown wrapping)
     const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      return res.status(200).setHeaders(corsHeaders).json({ ticker: null, name: null, confidence: 0 });
-    }
+    if (!jsonMatch) return res.status(200).json({ ticker: null, name: null, confidence: 0 });
 
     const result = JSON.parse(jsonMatch[0]);
-    return res.status(200).setHeaders(corsHeaders).json(result);
+    return res.status(200).json(result);
   } catch (e) {
     console.error("identify-brand error:", e);
-    return res.status(500).setHeaders(corsHeaders).json({ error: e instanceof Error ? e.message : "Unknown error" });
+    return res.status(500).json({ error: e instanceof Error ? e.message : "Unknown error" });
   }
 }
