@@ -2,6 +2,7 @@ import { useLocation } from "react-router-dom";
 import { ConnectKitButton } from "connectkit";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useWallet } from "@/contexts/WalletContext";
 import robinhoodLogo from "@/assets/robinhood-logo.png";
 
 const ROBINHOOD_CHAIN = {
@@ -31,28 +32,48 @@ async function addRobinhoodChain() {
 
 export function TopBar() {
   const location = useLocation();
+  const { isWrongChain, switchToRobinhood } = useWallet();
 
   if (["/", "/camera", "/result", "/confirm"].includes(location.pathname)) return null;
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
-      <div className="mx-auto flex max-w-md items-center justify-between px-4 py-2.5">
-        <span className="font-display text-sm font-bold text-foreground">
-          Snap<span className="text-primary">'n</span>Invest
-        </span>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={addRobinhoodChain}
-            className="h-8 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
-          >
-            <img src={robinhoodLogo} alt="" className="h-3.5 w-3.5 rounded-sm" />
-            Add Chain
-          </Button>
-          <ConnectKitButton />
+    <>
+      <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
+        <div className="mx-auto flex max-w-md items-center justify-between px-4 py-2.5">
+          <span className="font-display text-sm font-bold text-foreground">
+            Snap<span className="text-primary">'n</span>Invest
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={addRobinhoodChain}
+              className="h-8 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <img src={robinhoodLogo} alt="" className="h-3.5 w-3.5 rounded-sm" />
+              Add Chain
+            </Button>
+            <ConnectKitButton />
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      {/* Wrong-chain banner — only shown if auto-switch was rejected */}
+      {isWrongChain && (
+        <div className="fixed top-[53px] left-0 right-0 z-40 flex items-center justify-center gap-3 bg-yellow-500/10 border-b border-yellow-500/30 px-4 py-2">
+          <span className="text-xs text-yellow-400">
+            Wrong network — switch to Robinhood Chain Testnet to buy stocks
+          </span>
+          <Button
+            size="sm"
+            onClick={switchToRobinhood}
+            className="h-6 gap-1.5 rounded-full px-3 text-[11px] font-semibold"
+          >
+            <img src={robinhoodLogo} alt="" className="h-3 w-3 rounded-sm" />
+            Switch Network
+          </Button>
+        </div>
+      )}
+    </>
   );
 }
