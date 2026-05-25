@@ -133,7 +133,7 @@ const Index = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8, delay: 0.3 }}
-        className="mt-10 w-full"
+        className="mt-10 w-full max-w-md"
       >
         <div className="mb-3 flex items-center justify-center gap-2">
           <span className="relative flex h-2 w-2">
