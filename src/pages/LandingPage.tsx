@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { Sparkles, Users, Coins, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import robinhoodLogo from "@/assets/robinhood-logo.png";
 
@@ -23,13 +22,11 @@ function TokenizationMarquee() {
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        const { data } = await supabase
-          .from("holdings")
-          .select("id, captured_image_url, ticker, logo_url, amount_invested, shares, name")
-          .not("captured_image_url", "is", null)
-          .order("created_at", { ascending: false })
-          .limit(20);
-        if (data && data.length > 0) setItems(data);
+        const res = await fetch("/api/holdings?limit=20");
+        if (!res.ok) return;
+        const data: HoldingItem[] = await res.json();
+        const withImages = data.filter((d) => d.captured_image_url);
+        if (withImages.length > 0) setItems(withImages);
       } catch (err) {
         console.error("Failed to fetch holdings:", err);
       }
@@ -131,15 +128,14 @@ export default function LandingPage() {
       return;
     }
     setLoading(true);
-    const { error } = await (supabase as any).from("beta_signups").insert({ email: trimmed });
+    const res = await fetch("/api/beta-signups", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: trimmed }),
+    });
     setLoading(false);
-    if (error) {
-      if (error.code === "23505") {
-        toast({ title: "Already signed up!", description: "This email is already on the waitlist." });
-        setSubmitted(true);
-      } else {
-        toast({ title: "Something went wrong", description: "Please try again later.", variant: "destructive" });
-      }
+    if (!res.ok) {
+      toast({ title: "Something went wrong", description: "Please try again later.", variant: "destructive" });
       return;
     }
     setSubmitted(true);

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { StockLogo } from "@/components/StockLogo";
 import { formatDistanceToNow } from "date-fns";
 import { Loader2, ExternalLink, X } from "lucide-react";
@@ -50,50 +49,37 @@ export default function FeedPage() {
 
   useEffect(() => {
     async function load() {
-      const { data, error } = await supabase
-        .from("holdings")
-        .select("id, ticker, name, logo_url, amount_invested, shares, price_at_purchase, captured_image_url, tx_hash, created_at, user_id")
-        .order("created_at", { ascending: false })
-        .limit(50);
+      try {
+        const res = await fetch("/api/holdings?limit=50");
+        if (!res.ok) throw new Error("Failed to load feed");
+        const data: FeedItem[] = await res.json();
 
-      if (error) {
-        console.error("Feed load error:", error);
+        // user_id IS the wallet address in the new schema
+        const feedItems = data.map((d) => ({ ...d, wallet_address: d.user_id }));
+        setItems(feedItems);
+
+        const walletAddrs = feedItems.map((i) => i.wallet_address).filter(Boolean) as string[];
+        if (walletAddrs.length > 0) {
+          resolveENSBatch(walletAddrs).then(setEnsNames);
+        }
+      } catch (err) {
+        console.error("Feed load error:", err);
+      } finally {
         setLoading(false);
-        return;
-      }
-
-      const userIds = [...new Set((data || []).map((d) => d.user_id))];
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, wallet_address")
-        .in("id", userIds);
-
-      const addrMap = new Map(
-        (profiles || []).map((p) => [p.id, p.wallet_address])
-      );
-
-      const feedItems = (data || []).map((d) => ({
-        ...d,
-        wallet_address: addrMap.get(d.user_id) || null,
-      }));
-
-      setItems(feedItems);
-      setLoading(false);
-
-      const walletAddrs = feedItems
-        .map((i) => i.wallet_address)
-        .filter(Boolean) as string[];
-      if (walletAddrs.length > 0) {
-        resolveENSBatch(walletAddrs).then(setEnsNames);
       }
     }
     load();
   }, []);
 
   const handleDelete = async (id: string) => {
-    const { error } = await supabase.from("holdings").delete().eq("id", id);
-    if (error) {
-      toast({ title: "Failed to delete", description: error.message, variant: "destructive" });
+    const res = await fetch(`/api/holdings/${id}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      toast({ title: "Failed to delete", description: err.error || "Unknown error", variant: "destructive" });
       return;
     }
     setItems((prev) => prev.filter((i) => i.id !== id));

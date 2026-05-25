@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StockLogo } from "@/components/StockLogo";
 import { useWallet } from "@/contexts/WalletContext";
-import { supabase } from "@/integrations/supabase/client";
 import { getPortfolioSummary } from "@/lib/portfolio";
 import { fetchAllTokenBalances, TokenBalance } from "@/lib/tokens";
 
@@ -38,17 +37,16 @@ const PortfolioPage = () => {
   const localSummary = useMemo(() => getPortfolioSummary(), []);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !address) return;
     setDbLoading(true);
-    supabase
-      .from("holdings")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .then(({ data, error }) => {
-        if (!error && data) setDbHoldings(data as unknown as DbHolding[]);
-        setDbLoading(false);
-      });
-  }, [isAuthenticated]);
+    fetch(`/api/holdings?userId=${encodeURIComponent(address)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) setDbHoldings(data as DbHolding[]);
+      })
+      .catch(console.error)
+      .finally(() => setDbLoading(false));
+  }, [isAuthenticated, address]);
 
   useEffect(() => {
     if (!address) return;

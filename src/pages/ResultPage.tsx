@@ -5,7 +5,6 @@ import { Scan, X, Camera } from "lucide-react";
 import { StockLogo } from "@/components/StockLogo";
 import { Button } from "@/components/ui/button";
 import { Stock } from "@/lib/types";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { findStockBySymbol } from "@/lib/stocks";
 
@@ -26,21 +25,16 @@ const ResultPage = () => {
     const identifyBrand = async () => {
       try {
         // Step 1: AI identifies the brand
-        const { data, error } = await supabase.functions.invoke("identify-brand", {
-          body: { image },
+        const brandRes = await fetch("/api/identify-brand", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image }),
         });
+        const data = await brandRes.json();
 
-        if (error) {
-          console.error("Edge function error:", error);
-          toast.error("Failed to analyze image. Please try again.");
-          setMatchedStock(null);
-          setScanning(false);
-          return;
-        }
-
-        if (data?.error) {
-          console.error("AI error:", data.error);
-          toast.error(data.error);
+        if (!brandRes.ok || data?.error) {
+          console.error("Identify error:", data?.error);
+          toast.error(data?.error || "Failed to analyze image. Please try again.");
           setMatchedStock(null);
           setScanning(false);
           return;
@@ -53,12 +47,15 @@ const ResultPage = () => {
         }
 
         // Step 2: Look up real stock data
-        const { data: stockData, error: stockError } = await supabase.functions.invoke("stock-lookup", {
-          body: { ticker: data.ticker },
+        const stockRes = await fetch("/api/stock-lookup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ticker: data.ticker }),
         });
+        const stockData = await stockRes.json();
 
-        if (stockError || stockData?.error) {
-          console.error("Stock lookup error:", stockError || stockData?.error);
+        if (!stockRes.ok || stockData?.error) {
+          console.error("Stock lookup error:", stockData?.error);
           toast.error("Could not find stock data. Please try again.");
           setMatchedStock(null);
           setScanning(false);

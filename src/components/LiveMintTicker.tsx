@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Zap } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 
 interface MintEntry {
   id: string;
@@ -33,29 +32,14 @@ export function LiveMintTicker() {
 
   useEffect(() => {
     const fetchMints = async () => {
-      const { data } = await supabase
-        .from("holdings")
-        .select("id, ticker, name, amount_invested, created_at, user_id, captured_image_url")
-        .order("created_at", { ascending: false })
-        .limit(5);
-
-      if (!data || data.length === 0) return;
-
-      // Fetch wallet addresses for these users
-      const userIds = [...new Set(data.map((m) => m.user_id))];
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, wallet_address")
-        .in("id", userIds);
-
-      const walletMap = new Map(profiles?.map((p) => [p.id, p.wallet_address]) ?? []);
-
-      setMints(
-        data.map((m) => ({
-          ...m,
-          wallet: walletMap.get(m.user_id) || m.user_id,
-        }))
-      );
+      try {
+        const res = await fetch("/api/holdings?limit=5");
+        if (!res.ok) return;
+        const data: MintEntry[] = await res.json();
+        if (!data || data.length === 0) return;
+        // user_id IS the wallet address in the new schema
+        setMints(data.map((m) => ({ ...m, wallet: m.user_id })));
+      } catch {}
     };
 
     fetchMints();

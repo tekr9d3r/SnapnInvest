@@ -9,7 +9,6 @@ import { addHolding } from "@/lib/portfolio";
 import { compressImage } from "@/lib/imageUtils";
 import { useWallet } from "@/contexts/WalletContext";
 import { useWalletClient } from "wagmi";
-import { supabase } from "@/integrations/supabase/client";
 import {
   fetchEthPrice,
   dollarToEthWei,
@@ -24,10 +23,6 @@ import arbitrumLogo from "@/assets/arbitrum-logo.png";
 
 type Phase = "confirm" | "swapping" | "confirming" | "success";
 
-async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
-  const res = await fetch(dataUrl);
-  return res.blob();
-}
 
 const ConfirmPage = () => {
   const navigate = useNavigate();
@@ -129,33 +124,35 @@ const ConfirmPage = () => {
         if (image) {
           try {
             const compressed = await compressImage(image, 800, 0.6);
-            const blob = await dataUrlToBlob(compressed);
-            const fileName = `${userId}/${Date.now()}_${stock.ticker}.jpg`;
-            const { data: uploadData } = await supabase.storage
-              .from("captured-images")
-              .upload(fileName, blob, { contentType: "image/jpeg" });
-            if (uploadData?.path) {
-              const { data: urlData } = supabase.storage
-                .from("captured-images")
-                .getPublicUrl(uploadData.path);
-              capturedImageUrl = urlData.publicUrl;
+            const uploadRes = await fetch("/api/upload-image", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ image: compressed, userId, ticker: stock.ticker }),
+            });
+            if (uploadRes.ok) {
+              const { url } = await uploadRes.json();
+              capturedImageUrl = url;
             }
           } catch (err) {
             console.error("Image upload failed:", err);
           }
         }
 
-        await supabase.from("holdings").insert({
-          user_id: userId,
-          ticker: stock.ticker,
-          name: stock.name,
-          logo_url: stock.logoUrl || null,
-          amount_invested: amount,
-          shares,
-          price_at_purchase: stock.currentPrice,
-          captured_image_url: capturedImageUrl || null,
-          tx_hash: hash,
-        } as any);
+        await fetch("/api/holdings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: userId,
+            ticker: stock.ticker,
+            name: stock.name,
+            logo_url: stock.logoUrl || null,
+            amount_invested: amount,
+            shares,
+            price_at_purchase: stock.currentPrice,
+            captured_image_url: capturedImageUrl || null,
+            tx_hash: hash,
+          }),
+        });
       } else {
         let compressedImage: string | undefined;
         if (image) {
