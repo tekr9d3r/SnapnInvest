@@ -151,7 +151,7 @@ export default function FeedPage() {
 
                   {item.tx_hash && (
                     <a
-                      href={`https://explorer.robinhoodchain.com/tx/${item.tx_hash}`}
+                      href={`https://explorer.testnet.chain.robinhood.com/tx/${item.tx_hash}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="mt-1 inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
