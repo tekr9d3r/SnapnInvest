@@ -17,6 +17,8 @@ import ResultPage from "./pages/ResultPage";
 import ConfirmPage from "./pages/ConfirmPage";
 import PortfolioPage from "./pages/PortfolioPage";
 import FeedPage from "./pages/FeedPage";
+import ProfilePage from "./pages/ProfilePage";
+import LeaderboardPage from "./pages/LeaderboardPage";
 import NotFound from "./pages/NotFound";
 import ReadmePage from "./pages/ReadmePage";
 
@@ -45,6 +47,9 @@ const App = () => (
                 <Route path="/confirm" element={<ConfirmPage />} />
                 <Route path="/portfolio" element={<PortfolioPage />} />
                 <Route path="/feed" element={<FeedPage />} />
+                <Route path="/leaderboard" element={<LeaderboardPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/p/:address" element={<ProfilePage />} />
                 <Route path="/readme" element={<ReadmePage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>

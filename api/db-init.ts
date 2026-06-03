@@ -30,6 +30,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       )`;
 
+    await sql`
+      CREATE TABLE IF NOT EXISTS challenges (
+        id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+        name TEXT NOT NULL,
+        description TEXT,
+        tickers TEXT[] NOT NULL,
+        prize TEXT NOT NULL,
+        starts_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        ends_at TIMESTAMPTZ NOT NULL,
+        active BOOLEAN NOT NULL DEFAULT true,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )`;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS profiles (
+        user_id TEXT NOT NULL PRIMARY KEY,
+        username TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )`;
+
     return res.status(200).json({ ok: true, message: "Tables created (or already exist)" });
   } catch (e) {
     console.error("db-init error:", e);

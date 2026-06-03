@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { StockLogo } from "@/components/StockLogo";
 import robinhoodLogo from "@/assets/robinhood-logo.png";
+import { SnapHunt } from "@/components/SnapHunt";
 
 interface HoldingItem {
   id: string;
@@ -127,6 +128,9 @@ const Index = () => {
           <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
         </Button>
       </motion.div>
+
+      {/* Active Snap Hunt */}
+      <SnapHunt />
 
       {/* Live tokenizations marquee */}
       <motion.div

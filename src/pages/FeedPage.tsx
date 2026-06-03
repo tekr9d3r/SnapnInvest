@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { StockLogo } from "@/components/StockLogo";
 import { formatDistanceToNow } from "date-fns";
-import { Loader2, ExternalLink, X } from "lucide-react";
+import { Loader2, ExternalLink, X, Trophy } from "lucide-react";
 import { useWallet } from "@/contexts/WalletContext";
 import { toast } from "@/hooks/use-toast";
 import { JsonRpcProvider } from "ethers";
@@ -45,10 +46,17 @@ export default function FeedPage() {
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [ensNames, setEnsNames] = useState<Map<string, string>>(new Map());
+  const [huntTickers, setHuntTickers] = useState<string[]>([]);
   const { userId } = useWallet();
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function load() {
+      // Load hunt tickers in parallel
+      fetch("/api/challenge").then((r) => r.json()).then((d) => {
+        if (d.challenge?.tickers) setHuntTickers(d.challenge.tickers);
+      }).catch(() => {});
+
       try {
         const res = await fetch("/api/holdings?limit=50");
         if (!res.ok) throw new Error("Failed to load feed");
@@ -104,8 +112,17 @@ export default function FeedPage() {
             {items.map((item) => (
               <article
                 key={item.id}
-                className="relative flex flex-col rounded-xl border border-border bg-card p-3 overflow-hidden"
+                className={`relative flex flex-col rounded-xl border bg-card p-3 overflow-hidden
+                  ${huntTickers.includes(item.ticker) ? "border-primary/40" : "border-border"}`}
               >
+                {/* Hunt badge */}
+                {huntTickers.includes(item.ticker) && (
+                  <div className="absolute left-2 top-2 z-10 flex items-center gap-1 rounded-full bg-primary/90 px-2 py-0.5">
+                    <Trophy className="h-2.5 w-2.5 text-primary-foreground" />
+                    <span className="text-[9px] font-bold text-primary-foreground">Hunt</span>
+                  </div>
+                )}
+
                 {/* Delete button for own snaps */}
                 {userId && item.user_id === userId && (
                   <button
@@ -139,11 +156,14 @@ export default function FeedPage() {
                   </div>
 
                   <div className="mt-1.5 flex items-center justify-between">
-                    <span className="text-[11px] font-mono text-muted-foreground">
+                    <button
+                      onClick={() => navigate(`/p/${item.user_id}`)}
+                      className="text-[11px] font-mono text-muted-foreground hover:text-primary transition-colors"
+                    >
                       {item.wallet_address
                         ? ensNames.get(item.wallet_address.toLowerCase()) || shortenAddress(item.wallet_address)
-                        : "—"}
-                    </span>
+                        : shortenAddress(item.user_id)}
+                    </button>
                     <span className="text-[11px] text-muted-foreground">
                       {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
                     </span>
