@@ -26,6 +26,14 @@ function shortenAddress(addr: string) {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
 }
 
+function WalletAvatar({ address }: { address: string }) {
+  return (
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-bold text-gray-600">
+      {address.slice(2, 4).toUpperCase()}
+    </div>
+  );
+}
+
 const ethProvider = new JsonRpcProvider("https://eth.llamarpc.com");
 
 async function resolveENSBatch(addresses: string[]): Promise<Map<string, string>> {
@@ -42,6 +50,21 @@ async function resolveENSBatch(addresses: string[]): Promise<Map<string, string>
   return map;
 }
 
+function tickerColor(ticker: string): string {
+  const colors = [
+    "from-blue-100 to-blue-200",
+    "from-purple-100 to-purple-200",
+    "from-amber-100 to-amber-200",
+    "from-rose-100 to-rose-200",
+    "from-teal-100 to-teal-200",
+    "from-orange-100 to-orange-200",
+    "from-indigo-100 to-indigo-200",
+  ];
+  let hash = 0;
+  for (let i = 0; i < ticker.length; i++) hash = ticker.charCodeAt(i) + ((hash << 5) - hash);
+  return colors[Math.abs(hash) % colors.length];
+}
+
 export default function FeedPage() {
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,7 +75,6 @@ export default function FeedPage() {
 
   useEffect(() => {
     async function load() {
-      // Load hunt tickers in parallel
       fetch("/api/challenge").then((r) => r.json()).then((d) => {
         if (d.challenge?.tickers) setHuntTickers(d.challenge.tickers);
       }).catch(() => {});
@@ -61,8 +83,6 @@ export default function FeedPage() {
         const res = await fetch("/api/holdings?limit=50");
         if (!res.ok) throw new Error("Failed to load feed");
         const data: FeedItem[] = await res.json();
-
-        // user_id IS the wallet address in the new schema
         const feedItems = data.map((d) => ({ ...d, wallet_address: d.user_id }));
         setItems(feedItems);
 
@@ -95,93 +115,112 @@ export default function FeedPage() {
   };
 
   return (
-    <main className="min-h-screen bg-background pb-24 pt-16">
-      <div className="mx-auto max-w-7xl px-4 md:px-8 py-6">
-        <h1 className="mb-6 text-xl font-bold text-foreground">Live Feed</h1>
+    <main className="min-h-screen bg-gray-50 pb-24 pt-16">
+      <div className="mx-auto max-w-md px-4 py-4">
+        <h1 className="mb-5 text-xl font-bold text-gray-900">Live Feed</h1>
 
         {loading ? (
           <div className="flex justify-center py-20">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <Loader2 className="h-6 w-6 animate-spin text-gray-300" />
           </div>
         ) : items.length === 0 ? (
-          <p className="text-center text-sm text-muted-foreground py-20">
+          <p className="text-center text-sm text-gray-400 py-20">
             No snaps yet. Be the first to snap a stock!
           </p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-            {items.map((item) => (
-              <article
-                key={item.id}
-                className={`relative flex flex-col rounded-xl border bg-card p-3 overflow-hidden
-                  ${huntTickers.includes(item.ticker) ? "border-primary/40" : "border-border"}`}
-              >
-                {/* Hunt badge */}
-                {huntTickers.includes(item.ticker) && (
-                  <div className="absolute left-2 top-2 z-10 flex items-center gap-1 rounded-full bg-primary/90 px-2 py-0.5">
-                    <Trophy className="h-2.5 w-2.5 text-primary-foreground" />
-                    <span className="text-[9px] font-bold text-primary-foreground">Hunt</span>
-                  </div>
-                )}
+          <div className="space-y-4">
+            {items.map((item) => {
+              const walletAddr = item.wallet_address || item.user_id;
+              const displayName = ensNames.get(walletAddr.toLowerCase()) || shortenAddress(walletAddr);
+              const isHunt = huntTickers.includes(item.ticker);
+              const isOwn = userId && item.user_id === userId;
 
-                {/* Delete button for own snaps */}
-                {userId && item.user_id === userId && (
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    className="absolute top-2 right-2 rounded-full p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                    aria-label="Remove snap"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-
-                {item.captured_image_url && (
-                  <img
-                    src={item.captured_image_url}
-                    alt={`${item.ticker} snap`}
-                    className="w-full max-h-48 rounded-lg object-cover mb-3"
-                  />
-                )}
-
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <StockLogo ticker={item.ticker} logoUrl={item.logo_url || undefined} size="sm" className="h-5 w-5" />
-                    <span className="font-semibold text-sm text-foreground">{item.ticker}</span>
-                    <span className="text-xs text-muted-foreground truncate">{item.name}</span>
-                  </div>
-
-                  <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>${item.amount_invested?.toFixed(2)} invested</span>
-                    <span>·</span>
-                    <span>{item.shares?.toFixed(4)} shares</span>
-                  </div>
-
-                  <div className="mt-1.5 flex items-center justify-between">
+              return (
+                <article
+                  key={item.id}
+                  className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm"
+                >
+                  {/* Post header */}
+                  <div className="flex items-center justify-between px-4 py-3">
                     <button
                       onClick={() => navigate(`/p/${item.user_id}`)}
-                      className="text-[11px] font-mono text-muted-foreground hover:text-primary transition-colors"
+                      className="flex items-center gap-2.5 hover:opacity-75 transition-opacity"
                     >
-                      {item.wallet_address
-                        ? ensNames.get(item.wallet_address.toLowerCase()) || shortenAddress(item.wallet_address)
-                        : shortenAddress(item.user_id)}
+                      <WalletAvatar address={walletAddr} />
+                      <div className="text-left">
+                        <p className="text-sm font-semibold text-gray-900 leading-tight">{displayName}</p>
+                        <p className="text-[11px] text-gray-400">
+                          {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
+                        </p>
+                      </div>
                     </button>
-                    <span className="text-[11px] text-muted-foreground">
-                      {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {isHunt && (
+                        <span className="flex items-center gap-1 rounded-full bg-green-50 border border-green-200 px-2 py-0.5 text-[10px] font-semibold text-green-700">
+                          <Trophy className="h-2.5 w-2.5" />
+                          Hunt
+                        </span>
+                      )}
+                      {isOwn && (
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          className="rounded-full p-1 text-gray-300 hover:text-red-400 hover:bg-red-50 transition-colors"
+                          aria-label="Remove snap"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
-                  {item.tx_hash && (
-                    <a
-                      href={`https://explorer.testnet.chain.robinhood.com/tx/${item.tx_hash}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-1 inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
-                    >
-                      View tx <ExternalLink className="h-3 w-3" />
-                    </a>
+                  {/* Photo or gradient placeholder */}
+                  {item.captured_image_url ? (
+                    <img
+                      src={item.captured_image_url}
+                      alt={`${item.ticker} snap`}
+                      className="w-full aspect-[4/3] object-cover"
+                    />
+                  ) : (
+                    <div className={`w-full aspect-[4/3] bg-gradient-to-br ${tickerColor(item.ticker)} flex items-center justify-center`}>
+                      <StockLogo ticker={item.ticker} logoUrl={item.logo_url || undefined} size="lg" className="h-16 w-16 opacity-50" />
+                    </div>
                   )}
-                </div>
-              </article>
-            ))}
+
+                  {/* Caption */}
+                  <div className="px-4 py-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <StockLogo ticker={item.ticker} logoUrl={item.logo_url || undefined} size="sm" className="h-5 w-5" />
+                      <span className="font-bold text-sm text-gray-900">${item.ticker}</span>
+                      {item.name && (
+                        <span className="text-sm text-gray-400 truncate">{item.name}</span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-500">
+                      {item.amount_invested != null && (
+                        <span>${item.amount_invested.toFixed(2)} invested</span>
+                      )}
+                      {item.shares != null && item.amount_invested != null && (
+                        <span className="text-gray-300"> · </span>
+                      )}
+                      {item.shares != null && (
+                        <span>{item.shares.toFixed(4)} shares</span>
+                      )}
+                    </p>
+
+                    {item.tx_hash && (
+                      <a
+                        href={`https://explorer.testnet.chain.robinhood.com/tx/${item.tx_hash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 inline-flex items-center gap-1 text-[12px] font-medium text-green-600 hover:text-green-700 hover:underline transition-colors"
+                      >
+                        View on-chain <ExternalLink className="h-3 w-3" />
+                      </a>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
           </div>
         )}
       </div>

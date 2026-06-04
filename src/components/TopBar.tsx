@@ -38,7 +38,7 @@ export function TopBar() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-100 shadow-sm">
         <div className="mx-auto flex max-w-md items-center justify-between px-4 py-2.5">
           <span className="font-display text-sm font-bold text-foreground">
             Snap<span className="text-primary">'n</span>Invest
@@ -60,8 +60,8 @@ export function TopBar() {
 
       {/* Wrong-chain banner — only shown if auto-switch was rejected */}
       {isWrongChain && (
-        <div className="fixed top-[53px] left-0 right-0 z-40 flex items-center justify-center gap-3 bg-yellow-500/10 border-b border-yellow-500/30 px-4 py-2">
-          <span className="text-xs text-yellow-400">
+        <div className="fixed top-[53px] left-0 right-0 z-40 flex items-center justify-center gap-3 bg-amber-50 border-b border-amber-200 px-4 py-2">
+          <span className="text-xs text-amber-700">
             Wrong network — switch to Robinhood Chain Testnet to buy stocks
           </span>
           <Button
