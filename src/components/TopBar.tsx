@@ -39,20 +39,18 @@ export function TopBar() {
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-100 shadow-sm">
-        <div className="mx-auto flex max-w-md items-center justify-between px-4 py-2.5">
-          <span className="font-display text-sm font-bold text-foreground">
-            Snap<span className="text-primary">'n</span>Invest
+        <div className="mx-auto flex max-w-md items-center justify-between px-4 py-2">
+          <span className="font-display text-[19px] font-bold tracking-tight text-gray-900">
+            Snap<span className="text-green-500">'n</span>Invest
           </span>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
+          <div className="flex items-center gap-1.5">
+            <button
               onClick={addRobinhoodChain}
-              className="h-8 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
+              className="flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-[11px] font-semibold text-green-700 hover:bg-green-100 transition-colors"
             >
-              <img src={robinhoodLogo} alt="" className="h-3.5 w-3.5 rounded-sm" />
+              <img src={robinhoodLogo} alt="" className="h-3 w-3 rounded-sm" />
               Add Chain
-            </Button>
+            </button>
             <ConnectKitButton />
           </div>
         </div>

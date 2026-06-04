@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Camera, Trophy } from "lucide-react";
+import { Trophy } from "lucide-react";
 import { motion } from "framer-motion";
 import { StockLogo } from "@/components/StockLogo";
 import { ChallengeCards } from "@/components/ChallengeCards";
@@ -70,27 +69,8 @@ function TokenizationMarquee() {
 }
 
 const Index = () => {
-  const navigate = useNavigate();
-
   return (
     <div className="flex min-h-screen flex-col items-center bg-gray-50 pb-24 pt-16">
-      {/* Compact hero */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="mt-6 flex flex-col items-center px-6 text-center"
-      >
-        <p className="text-sm text-gray-400 mb-3">See it. Snap it. Own it.</p>
-        <button
-          onClick={() => navigate("/camera")}
-          className="flex items-center gap-2 rounded-2xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white hover:bg-gray-800 transition-colors shadow-sm"
-        >
-          <Camera className="h-4 w-4" />
-          Snap a Brand
-        </button>
-      </motion.div>
-
       {/* Active Challenges */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}

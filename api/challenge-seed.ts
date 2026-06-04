@@ -31,7 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ${"Weekly Sprint"},
         ${"5 brands, 7 days. Snap each one in the real world, mint the stock, enter the raffle."},
         ${["AAPL", "MCD", "NKE", "SBUX", "TSLA"]},
-        ${"1 free stock token"},
+        ${"1 TSLA"},
         ${"weekly"},
         ${endsAt.toISOString()}
       )`;
@@ -48,7 +48,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ${"Food & Drink Hunt"},
         ${"Find 5 of the world's biggest food and drink brands. Snap them, mint them, win free stock."},
         ${["MCD", "SBUX", "KO", "PEP", "CMG"]},
-        ${"1 free food stock"},
+        ${"1 KO"},
         ${"food"},
         ${endsAt.toISOString()}
       )`;
@@ -65,7 +65,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ${"Fashion & Footwear Drop"},
         ${"Hunt down 5 iconic clothing and shoe brands in the wild. Snap, mint, and win free stock."},
         ${["NKE", "LULU", "RL", "UA", "PVH"]},
-        ${"1 free fashion stock"},
+        ${"1 NKE"},
         ${"fashion"},
         ${endsAt.toISOString()}
       )`;
@@ -82,7 +82,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ${"Market Master"},
         ${"The ultimate hunt. 25 brands across every sector. 90 days. One grand prize."},
         ${["AAPL", "TSLA", "AMZN", "GOOGL", "MSFT", "META", "NFLX", "NVDA", "MCD", "NKE", "SBUX", "KO", "PEP", "DIS", "V", "JPM", "WMT", "COST", "AMD", "UBER", "ABNB", "SPOT", "SNAP", "HOOD", "RIVN"]},
-        ${"$25 in free stock tokens"},
+        ${"5 AAPL"},
         ${"grand"},
         ${endsAt.toISOString()}
       )`;
