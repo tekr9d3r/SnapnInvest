@@ -51,7 +51,16 @@ export function TopBar() {
               <img src={robinhoodLogo} alt="" className="h-3 w-3 rounded-sm" />
               Add Chain
             </button>
-            <ConnectKitButton />
+            <ConnectKitButton.Custom>
+              {({ isConnected, show, truncatedAddress, ensName }) => (
+                <button
+                  onClick={show}
+                  className="flex items-center rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-semibold text-gray-700 hover:bg-gray-200 transition-colors"
+                >
+                  {isConnected ? (ensName ?? truncatedAddress) : "Connect"}
+                </button>
+              )}
+            </ConnectKitButton.Custom>
           </div>
         </div>
       </header>
