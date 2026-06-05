@@ -15,6 +15,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Deactivate any old Collector's Board challenges
   await sql`UPDATE challenges SET active = false WHERE challenge_type = 'board'`;
 
+  // Normalize prize text to short format for any existing active challenges
+  await sql`UPDATE challenges SET prize = '1 TSLA' WHERE challenge_type = 'weekly' AND prize != '1 TSLA'`;
+  await sql`UPDATE challenges SET prize = '1 KO'   WHERE challenge_type = 'food'   AND prize != '1 KO'`;
+  await sql`UPDATE challenges SET prize = '1 NKE'  WHERE challenge_type = 'fashion' AND prize != '1 NKE'`;
+  await sql`UPDATE challenges SET prize = '5 AAPL' WHERE challenge_type = 'grand'  AND prize != '5 AAPL'`;
+
   const existing = await sql`
     SELECT challenge_type FROM challenges WHERE active = true AND ends_at > now()`;
   const existingTypes = new Set(existing.map((r) => r.challenge_type as string));
