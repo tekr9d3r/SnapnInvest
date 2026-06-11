@@ -41,7 +41,7 @@ export function TopBar() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-100 shadow-sm">
         <div className="mx-auto flex max-w-md items-center justify-between px-4 py-2">
           <span className="font-display text-[19px] font-bold tracking-wide text-gray-900">
-            Fara
+            FARA
           </span>
           <div className="flex items-center gap-1.5">
             <button
