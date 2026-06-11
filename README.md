@@ -2,13 +2,13 @@
 
 > **Hunt stocks in the wild.**
 
-Fara turns the real world into a stock market game. Spot a brand, snap a photo, and Claude AI instantly identifies it — then you mint the tokenized stock on Robinhood Chain. Collect stocks across adventure challenges, compete on the leaderboard, and win free stock prizes.
+Fara turns the real world into a stock market game. Spot a brand, snap a photo and mint the tokenized stock on Robinhood Chain. Collect stocks across adventure challenges, compete on the leaderboard, and win free stock prizes.
 
 *Fara — Old Norse for "to travel, to journey."*
 
 Built on [Robinhood Chain Testnet](https://chain.robinhood.com) for the Robinhood hackathon.
 
-**Live app:** [snapninvest.xyz](https://snapninvest.xyz)
+**Live app:** [fara-invest.vercel.app](https://fara-invest.vercel.app/)
 
 ---
 
