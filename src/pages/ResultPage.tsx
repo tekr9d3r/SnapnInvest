@@ -114,8 +114,8 @@ const ResultPage = () => {
         <Button variant="ghost" size="icon" onClick={() => navigate("/camera")}>
           <X className="h-6 w-6" />
         </Button>
-        <span className="font-display text-sm font-semibold">
-          Snap<span className="text-primary">'n</span>Invest
+        <span className="font-display text-sm font-bold tracking-wide">
+          FARA
         </span>
         <div className="w-10" />
       </div>

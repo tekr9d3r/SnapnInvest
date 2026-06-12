@@ -80,8 +80,8 @@ const CameraPage = () => {
         <Button variant="ghost" size="icon" onClick={() => { stopCamera(); navigate("/"); }}>
           <X className="h-6 w-6" />
         </Button>
-        <span className="font-display text-sm font-semibold text-foreground">
-          Snap<span className="text-primary">'n</span>Invest
+        <span className="font-display text-sm font-bold tracking-wide text-foreground">
+          FARA
         </span>
         <div className="w-10" />
       </div>
