@@ -41,7 +41,9 @@ function timeLeftUnit(endsAt: string): string {
   return days > 0 ? "days left" : "hours left";
 }
 
-function ChallengeCard({
+export { Challenge };
+
+export function ChallengeCard({
   challenge,
   onEnroll,
   index,

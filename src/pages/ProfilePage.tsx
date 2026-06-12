@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Camera, Trophy, Zap, BarChart2, CheckCircle2, Circle, ExternalLink, Copy, Mail, Pencil } from "lucide-react";
+import { Camera, Zap, BarChart2, ExternalLink, Copy, Mail, Pencil } from "lucide-react";
 import { StockLogo } from "@/components/StockLogo";
+import { ChallengeCard, Challenge as ChallengeType } from "@/components/ChallengeCards";
+import { EmailGateModal } from "@/components/EmailGateModal";
 import { useWallet } from "@/contexts/WalletContext";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -18,13 +20,6 @@ interface Holding {
   created_at: string;
 }
 
-interface Challenge {
-  id: string;
-  name: string;
-  tickers: string[];
-  prize: string;
-  ends_at: string;
-}
 
 function shortenAddress(addr: string) {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
@@ -44,8 +39,8 @@ export default function ProfilePage() {
   const isOwnProfile = !paramAddress || paramAddress.toLowerCase() === connectedAddress?.toLowerCase();
 
   const [holdings, setHoldings] = useState<Holding[]>([]);
-  const [challenge, setChallenge] = useState<Challenge | null>(null);
-  const [progress, setProgress] = useState<string[]>([]);
+  const [grandChallenge, setGrandChallenge] = useState<ChallengeType | null>(null);
+  const [enrollTarget, setEnrollTarget] = useState<ChallengeType | null>(null);
   const [loading, setLoading] = useState(true);
   const [lightbox, setLightbox] = useState<string | null>(null);
 
@@ -60,15 +55,15 @@ export default function ProfilePage() {
 
     Promise.all([
       fetch(`/api/holdings?userId=${encodeURIComponent(address)}`).then((r) => r.json()),
-      fetch(`/api/challenge?userId=${encodeURIComponent(address)}`).then((r) => r.json()),
+      fetch(`/api/challenges?userId=${encodeURIComponent(address)}`).then((r) => r.json()),
       isOwnProfile
         ? fetch(`/api/profile?userId=${encodeURIComponent(address)}`).then((r) => r.json())
         : Promise.resolve(null),
     ])
       .then(([h, c, p]) => {
         setHoldings(Array.isArray(h) ? h : []);
-        setChallenge(c.challenge ?? null);
-        setProgress(c.progress ?? []);
+        const grand = (c.challenges ?? []).find((ch: ChallengeType) => ch.challenge_type === "grand") ?? null;
+        setGrandChallenge(grand);
         if (p?.email) setSavedEmail(p.email);
       })
       .catch(console.error)
@@ -111,7 +106,6 @@ export default function ProfilePage() {
   const totalInvested = holdings.reduce((s, h) => s + (h.amount_invested || 0), 0);
   const uniqueStocks = new Set(holdings.map((h) => h.ticker)).size;
   const snapsWithPhotos = holdings.filter((h) => h.captured_image_url);
-  const challengeComplete = challenge && progress.length >= challenge.tickers.length;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24 pt-16">
@@ -211,39 +205,10 @@ export default function ProfilePage() {
           </motion.div>
         )}
 
-        {/* Active challenge progress */}
-        {challenge && (
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-            className="mt-3 rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between bg-green-50 px-4 py-2.5">
-              <div className="flex items-center gap-2">
-                <Trophy className="h-4 w-4 text-green-600" />
-                <span className="text-sm font-bold text-gray-900">{challenge.name}</span>
-              </div>
-              {challengeComplete
-                ? <span className="text-[10px] font-semibold text-green-600 bg-green-100 border border-green-200 rounded-full px-2 py-0.5">In Raffle 🎉</span>
-                : <span className="text-[10px] text-gray-400">{progress.length}/{challenge.tickers.length} found</span>}
-            </div>
-            <div className="divide-y divide-gray-50">
-              {challenge.tickers.map((ticker) => {
-                const done = progress.includes(ticker);
-                return (
-                  <div key={ticker} className="flex items-center gap-3 px-4 py-2">
-                    {done ? <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" /> : <Circle className="h-4 w-4 text-gray-200 shrink-0" />}
-                    <StockLogo ticker={ticker} size="sm" className="h-5 w-5" />
-                    <span className={`text-sm font-semibold ${done ? "text-gray-900" : "text-gray-400"}`}>${ticker}</span>
-                    {!done && <span className="ml-auto text-[10px] text-gray-300">Snap it →</span>}
-                  </div>
-                );
-              })}
-            </div>
-            <div className="px-4 pb-3 pt-2">
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
-                <div className="h-full rounded-full bg-green-500 transition-all duration-700"
-                  style={{ width: `${(progress.length / challenge.tickers.length) * 100}%` }} />
-              </div>
-              <p className="mt-1.5 text-[11px] text-gray-400">Prize: <span className="text-green-600 font-semibold">{challenge.prize}</span></p>
-            </div>
+        {/* Market Master grand challenge */}
+        {grandChallenge && (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="mt-3">
+            <ChallengeCard challenge={grandChallenge} onEnroll={setEnrollTarget} index={0} />
           </motion.div>
         )}
 
@@ -290,6 +255,25 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+
+      {enrollTarget && (
+        <EmailGateModal
+          challenge={enrollTarget}
+          onClose={() => setEnrollTarget(null)}
+          onSuccess={() => {
+            setEnrollTarget(null);
+            if (address) {
+              fetch(`/api/challenges?userId=${encodeURIComponent(address)}`)
+                .then((r) => r.json())
+                .then((c) => {
+                  const grand = (c.challenges ?? []).find((ch: ChallengeType) => ch.challenge_type === "grand") ?? null;
+                  setGrandChallenge(grand);
+                })
+                .catch(() => {});
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

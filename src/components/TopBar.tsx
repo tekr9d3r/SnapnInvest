@@ -1,4 +1,4 @@
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import { ConnectKitButton } from "connectkit";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -34,15 +34,15 @@ export function TopBar() {
   const location = useLocation();
   const { isWrongChain, switchToRobinhood } = useWallet();
 
-  if (["/landing", "/camera", "/result", "/confirm"].includes(location.pathname)) return null;
+  if (["/landing"].includes(location.pathname)) return null;
 
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-100 shadow-sm">
         <div className="mx-auto flex max-w-md items-center justify-between px-4 py-2">
-          <span className="font-display text-[19px] font-bold tracking-wide text-gray-900">
+          <Link to="/" className="font-display text-[19px] font-bold tracking-wide text-gray-900 hover:opacity-70 transition-opacity">
             FARA
-          </span>
+          </Link>
           <div className="flex items-center gap-1.5">
             <button
               onClick={addRobinhoodChain}

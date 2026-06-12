@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Camera, Upload, X, RotateCcw } from "lucide-react";
 import { motion } from "framer-motion";
@@ -73,18 +73,11 @@ const CameraPage = () => {
     startCamera();
   };
 
+  // Stop camera stream on unmount (e.g. navigating away via TopBar)
+  useEffect(() => () => { stream?.getTracks().forEach((t) => t.stop()); }, [stream]);
+
   return (
-    <div className="fixed inset-0 flex flex-col bg-background">
-      {/* Top bar */}
-      <div className="absolute left-0 right-0 top-0 z-10 flex items-center justify-between p-4">
-        <Button variant="ghost" size="icon" onClick={() => { stopCamera(); navigate("/"); }}>
-          <X className="h-6 w-6" />
-        </Button>
-        <span className="font-display text-sm font-bold tracking-wide text-foreground">
-          FARA
-        </span>
-        <div className="w-10" />
-      </div>
+    <div className="fixed inset-0 flex flex-col bg-background pt-14">
 
       {/* Camera / Preview area */}
       <div className="relative flex flex-1 items-center justify-center overflow-hidden">

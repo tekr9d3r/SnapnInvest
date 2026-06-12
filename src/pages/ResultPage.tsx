@@ -108,17 +108,7 @@ const ResultPage = () => {
   if (!image) return null;
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-background">
-      {/* Top bar */}
-      <div className="flex items-center justify-between p-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/camera")}>
-          <X className="h-6 w-6" />
-        </Button>
-        <span className="font-display text-sm font-bold tracking-wide">
-          FARA
-        </span>
-        <div className="w-10" />
-      </div>
+    <div className="fixed inset-0 flex flex-col bg-background pt-14">
 
       {/* Image preview */}
       <div className="relative mx-4 overflow-hidden rounded-2xl">

@@ -199,21 +199,14 @@ const ConfirmPage = () => {
   const isProcessing = phase === "swapping" || phase === "confirming";
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-background">
-      {/* Top bar */}
-      <div className="flex items-center justify-between p-4">
-        {phase === "confirm" ? (
+    <div className="fixed inset-0 flex flex-col bg-background pt-14">
+      {phase === "confirm" && (
+        <div className="flex items-center px-2 pt-2">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-        ) : (
-          <div className="w-10" />
-        )}
-        <span className="font-display text-sm font-semibold">
-          {phase === "success" ? "Done!" : "Confirm Purchase"}
-        </span>
-        <div className="w-10" />
-      </div>
+        </div>
+      )}
 
       <div className="flex flex-1 flex-col items-center justify-center px-6">
         <AnimatePresence mode="wait">
@@ -392,10 +385,10 @@ const ConfirmPage = () => {
               <div className="mt-6 flex w-full gap-3">
                 <Button
                   variant="secondary"
-                  onClick={() => navigate("/portfolio")}
+                  onClick={() => navigate(address ? `/p/${address}` : "/portfolio")}
                   className="flex-1 rounded-xl"
                 >
-                  Portfolio
+                  My Profile
                 </Button>
                 <Button
                   onClick={() => navigate("/camera")}
