@@ -71,30 +71,13 @@ function TokenizationMarquee() {
 const Index = () => {
   return (
     <div className="flex min-h-screen flex-col items-center bg-gray-50 pb-24 pt-16">
-      {/* Active Challenges */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        className="mt-8 w-full max-w-md px-4"
-      >
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Trophy className="h-4 w-4 text-green-600" />
-            <span className="font-semibold text-gray-900">Active Challenges</span>
-          </div>
-          <span className="text-xs text-gray-400">3 running</span>
-        </div>
-      </motion.div>
 
-      <ChallengeCards />
-
-      {/* Live community snaps */}
+      {/* Live community snaps — top */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.3 }}
-        className="mt-10 w-full max-w-md"
+        transition={{ duration: 0.6, delay: 0.1 }}
+        className="mt-6 w-full max-w-md"
       >
         <div className="mb-3 flex items-center justify-center gap-2 px-4">
           <span className="relative flex h-2 w-2">
@@ -107,6 +90,25 @@ const Index = () => {
         </div>
         <TokenizationMarquee />
       </motion.div>
+
+      {/* Active Challenges */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="mt-8 w-full max-w-md px-4"
+      >
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Trophy className="h-4 w-4 text-green-600" />
+            <span className="font-semibold text-gray-900">Active Challenges</span>
+          </div>
+          <span className="text-xs text-gray-400">4 running</span>
+        </div>
+      </motion.div>
+
+      <ChallengeCards />
+
     </div>
   );
 };
