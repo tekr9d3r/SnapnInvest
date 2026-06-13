@@ -38,7 +38,7 @@ Fara is a mobile-first adventure investing game. Spot brands in the real world, 
 | **Styling** | Tailwind CSS, shadcn/ui, Framer Motion |
 | **Auth** | Privy (wallet-based authentication) |
 | **Backend** | Vercel Serverless Functions, Neon PostgreSQL |
-| **AI** | Claude Haiku (Anthropic) — brand identification |
+| **AI** | Claude Sonnet (Anthropic) — brand identification |
 | **Blockchain** | Robinhood Chain Testnet, ethers.js |
 | **State** | TanStack React Query |
 
@@ -74,7 +74,7 @@ Fara is a mobile-first adventure investing game. Spot brands in the real world, 
 
 ### Edge Functions
 
-- **\`identify-brand\`** — Accepts a product image, uses Claude Haiku (Anthropic) to identify the brand and return stock ticker info
+- **\`identify-brand\`** — Accepts a product image, uses Claude Sonnet (Anthropic) to identify the brand and return stock ticker info
 - **\`stock-lookup\`** — Fetches real-time stock price data for identified tickers
 - **\`wallet-auth\`** — Handles wallet signature verification and session management
 
