@@ -6,7 +6,7 @@ Fara turns the real world into a stock market game. Spot a brand, snap a photo a
 
 *Fara — Old Norse for "to travel, to journey."*
 
-Built on [Robinhood Chain Testnet](https://chain.robinhood.com) for the Robinhood hackathon.
+Built on [Robinhood Chain Testnet](https://chain.robinhood.com) during the Buildathon for the Arbitrum Open House London 2026.
 
 **Live app:** [fara-invest.vercel.app](https://fara-invest.vercel.app/)
 
